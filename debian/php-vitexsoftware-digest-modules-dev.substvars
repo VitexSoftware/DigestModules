@@ -1,0 +1,6 @@
+phpcomposer:name=vitexsoftware/digest-modules
+phpcomposer:description=Data collection modules for accounting system digest reports
+phpcomposer:Debian-require=php-common, php-common, php-json
+phpcomposer:Debian-require-dev=phpunit (>= 10.0), phpunit (<< 11~~)
+misc:Depends=
+misc:Pre-Depends=

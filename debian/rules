@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --with phpcomposer
+
+override_dh_install:
+	dh_install
+	jq '.version = "'`dpkg-parsechangelog | sed -n 's/^Version: //p'| sed 's/~.*//'`'"'  composer.json |sponge debian/php-vitexsoftware-digest-modules/usr/share/php/VitexSoftware/DigestModules/composer.json
+
+override_dh_auto_build:
+	composer update --no-dev
+
+override_dh_auto_clean:
+	composer clear-cache
+	rm -rf vendor/

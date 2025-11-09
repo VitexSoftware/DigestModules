@@ -1,0 +1,35 @@
+Source: php-vitexsoftware-digest-modules
+Build-Depends: debhelper-compat (= 13), pkg-php-tools, composer, jq, moreutils
+Standards-Version: 4.3.0
+Maintainer: Vítězslav Dvořák <info@vitexsoftware.cz>
+Uploaders: Vitex <vitex@hippy.cz>
+Priority: optional
+Homepage: https://github.com/VitexSoftware/DigestModules
+
+Package: php-vitexsoftware-digest-modules
+Depends: ${misc:Depends}, php-vitexsoftware-ease-core, composer-debian, php-cli, php-intl, php-mbstring, php-xml
+Suggests: php-vitexsoftware-abraflexi-bricks
+Architecture: all
+Section: web
+Priority: optional
+Description: Modular analytics library for accounting systems
+ DigestModules provides data collection modules that return structured JSON data
+ for accounting system analytics. Features include:
+ .
+  - Core interfaces: ModuleInterface, DataProviderInterface
+  - Abstract base classes for rapid module development
+  - System-agnostic data providers (AbraFlexi, Pohoda, etc.)
+  - Standardized module output format (JSON)
+  - Built-in modules: OutcomingInvoices, Debtors
+  - PSR-4 autoloading and comprehensive documentation
+ .
+ This library focuses only on data collection and analysis, not presentation.
+ Use with DigestRenderer for HTML output generation.
+
+Package: php-vitexsoftware-digest-modules-dev
+Depends: ${misc:Depends}, php-vitexsoftware-digest-modules, phpunit
+Architecture: all
+Section: web
+Priority: optional
+Description: Development files for DigestModules
+ Unit tests, examples and development tools for the DigestModules library.

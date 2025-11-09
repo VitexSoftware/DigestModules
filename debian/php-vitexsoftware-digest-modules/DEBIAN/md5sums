@@ -1,0 +1,9 @@
+a32dee2f044cf1d00e3c39ea7fdad96e  usr/share/doc/php-vitexsoftware-digest-modules/changelog.gz
+138cef99fb931d124febc337ee185f94  usr/share/php/VitexSoftware/DigestModules/Core/AbstractModule.php
+d6a8afef94289af75bc3f445a869395e  usr/share/php/VitexSoftware/DigestModules/Core/DataProviderInterface.php
+38d36f63fb4a5267d3f3c50d6af41ac6  usr/share/php/VitexSoftware/DigestModules/Core/ModuleInterface.php
+687a77c5f69c668cf70354b5ed702e3c  usr/share/php/VitexSoftware/DigestModules/Core/ModuleRunner.php
+c4c8383f29ee5976ba6abadfaf8b0fc8  usr/share/php/VitexSoftware/DigestModules/Modules/Debtors.php
+545f208b53314f64663d60cbbda12733  usr/share/php/VitexSoftware/DigestModules/Modules/OutcomingInvoices.php
+2f54f89495ebd24136addd0c64a6c80c  usr/share/php/VitexSoftware/DigestModules/Providers/AbraFlexiDataProvider.php
+bed2d81ab19de3e5c57f93bf0fcd7da0  usr/share/php/VitexSoftware/DigestModules/composer.json

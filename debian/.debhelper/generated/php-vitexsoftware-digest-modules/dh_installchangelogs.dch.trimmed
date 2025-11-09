@@ -1,0 +1,11 @@
+php-vitexsoftware-digest-modules (1.0.0) unstable; urgency=medium
+
+  * Initial release
+  * Modular analytics library for accounting systems
+  * Core interfaces: ModuleInterface, DataProviderInterface
+  * Abstract base classes for rapid module development
+  * AbraFlexiDataProvider for AbraFlexi integration
+  * Built-in modules: OutcomingInvoices, Debtors
+  * PSR-4 autoloading and comprehensive documentation
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Sat, 09 Nov 2024 12:00:00 +0100

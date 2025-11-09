@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    configure)
+        # Register with composer autoloader if available
+        if [ -x /usr/bin/composer ]; then
+            cd /usr/share/php/VitexSoftware/DigestModules
+            composer dump-autoload 2>/dev/null || true
+        fi
+        
+        # Update system autoloader
+        if [ -x /usr/bin/update-alternatives ]; then
+            update-alternatives --quiet --install /usr/share/php/autoload.php autoload-php \
+                /usr/share/php/VitexSoftware/DigestModules/vendor/autoload.php 10 || true
+        fi
+        ;;
+esac
+
+
+
+exit 0

@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    remove|purge)
+        # Remove from alternatives system
+        if [ -x /usr/bin/update-alternatives ]; then
+            update-alternatives --quiet --remove autoload-php \
+                /usr/share/php/VitexSoftware/DigestModules/vendor/autoload.php || true
+        fi
+        ;;
+esac
+
+
+
+exit 0
