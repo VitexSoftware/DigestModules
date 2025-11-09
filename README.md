@@ -1,33 +1,95 @@
-# DigestModules
+# DigestModules 📊
 
-A standalone PHP library for collecting and processing data from accounting systems for digest reports.
+> **Modular Analytics Library for Accounting Systems**
 
-## Overview
+A standalone PHP library that provides **data collection and analytics modules** for accounting systems, returning structured JSON data for further processing or visualization.
 
-This library provides data collection modules that return structured data (associative arrays) instead of HTML output. It's designed to be accounting-system agnostic and can be extended to support various accounting systems like AbraFlexi, Pohoda, Money S3, etc.
+## 🎯 Overview
 
-## Features
+DigestModules is the **data collection engine** that:
 
-- **System Agnostic**: Modular design supports multiple accounting systems
-- **JSON Output**: Returns structured data as associative arrays
-- **Extensible**: Easy to add new modules and data providers
-- **PSR-4 Compliant**: Follows PHP standards
-- **Type Safe**: Full PHP 8.1+ type declarations
+- 🔌 **Connects to accounting systems** (AbraFlexi, Pohoda, Money S3, etc.)
+- 📈 **Analyzes business data** (invoices, customers, payments, etc.)
+- 📋 **Returns structured JSON** (no HTML - pure data layer)
+- 🧩 **Modular architecture** (easy to extend with new analytics)
+- 🔄 **System-agnostic design** (works across different accounting platforms)
 
-## Installation
+## ✨ Key Features
+
+- **🎯 Pure Data Layer**: Returns JSON arrays - no HTML generation
+- **🔌 Multiple Providers**: AbraFlexi, Pohoda, and custom system support
+- **📊 Built-in Analytics**: Invoice analysis, debt monitoring, financial insights
+- **🧩 Modular Design**: Easy to add new modules and data sources  
+- **⚡ Performance**: Optimized queries with caching support
+- **🛡️ Type Safe**: Full PHP 8.1+ type declarations with strict types
+- **📝 PSR-4 Compliant**: Follows PHP-FIG standards
+- **🔍 Comprehensive Testing**: PHPUnit test coverage
+
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
+# Via Composer
 composer require vitexsoftware/digest-modules
+
+# Via Debian Package  
+sudo apt install php-vitexsoftware-digest-modules
 ```
 
-## Basic Usage
+### Basic Usage
 
 ```php
+<?php
 use VitexSoftware\DigestModules\Core\ModuleRunner;
 use VitexSoftware\DigestModules\Providers\AbraFlexiDataProvider;
 
-// Create a data provider for your accounting system
-$dataProvider = new AbraFlexiDataProvider($config);
+// Connect to your accounting system
+$dataProvider = new AbraFlexiDataProvider(
+    'https://your-abraflexi.com',
+    'username', 
+    'password'
+);
+
+// Run analytics modules
+$runner = new ModuleRunner($dataProvider);
+
+// Get invoice analysis as JSON
+$invoiceData = $runner->runModule('outcoming_invoices');
+echo json_encode($invoiceData, JSON_PRETTY_PRINT);
+
+// Get debtor analysis  
+$debtorData = $runner->runModule('debtors');
+echo json_encode($debtorData, JSON_PRETTY_PRINT);
+```
+
+### Expected JSON Output
+
+```json
+{
+    "module": "outcoming_invoices",
+    "heading": "Outcoming Invoices Analysis",
+    "summary": {
+        "total_amount": 125000.50,
+        "currency": "CZK", 
+        "count": 45,
+        "processing_time": 0.234
+    },
+    "details": [
+        {
+            "customer": "ACME Corp",
+            "amount": 25000.00,
+            "date": "2024-12-15",
+            "status": "paid"
+        }
+    ],
+    "metadata": {
+        "generated_at": "2024-12-23T10:30:45+01:00",
+        "provider": "AbraFlexiDataProvider", 
+        "system_version": "2023.1"
+    }
+}
+```
 
 // Create module runner
 $runner = new ModuleRunner($dataProvider);
