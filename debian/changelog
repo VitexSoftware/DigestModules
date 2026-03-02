@@ -1,3 +1,9 @@
+php-vitexsoftware-digest-modules (1.0.1) unstable; urgency=medium
+
+  * Remove composer-debian dependency
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Mon, 02 Mar 2026 17:08:00 +0100
+
 php-vitexsoftware-digest-modules (1.0.0) unstable; urgency=medium
 
   * Initial release

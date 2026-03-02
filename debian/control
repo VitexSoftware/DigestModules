@@ -7,7 +7,7 @@ Priority: optional
 Homepage: https://github.com/VitexSoftware/DigestModules
 
 Package: php-vitexsoftware-digest-modules
-Depends: ${misc:Depends}, php-vitexsoftware-ease-core, composer-debian, php-cli, php-intl, php-mbstring, php-xml
+Depends: ${misc:Depends}, php-vitexsoftware-ease-core, php-cli, php-intl, php-mbstring, php-xml
 Suggests: php-vitexsoftware-abraflexi-bricks
 Architecture: all
 Section: web
