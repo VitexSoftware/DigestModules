@@ -1,5 +1,5 @@
 Source: php-vitexsoftware-digest-modules
-Build-Depends: debhelper-compat (= 13), pkg-php-tools, composer, jq, moreutils
+Build-Depends: debhelper-compat (= 13), pkg-php-tools, phpab, jq, moreutils
 Standards-Version: 4.3.0
 Maintainer: Vítězslav Dvořák <info@vitexsoftware.cz>
 Uploaders: Vitex <vitex@hippy.cz>

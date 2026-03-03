@@ -51,6 +51,23 @@ This library implements a **plugin-style architecture** where:
 ## 🔧 Development Guidelines
 
 ### Coding Standards
+- **PHP 8.1+**: Use modern PHP features and strict types: `declare(strict_types=1);`
+- **PSR-12**: Follow PHP-FIG coding standards for consistency
+- **Type Safety**: Include type hints for all parameters and return types
+- **Documentation**: PHPDoc blocks for all public methods and classes
+- **Testing**: PHPUnit tests for all new functionality
+- **Internationalization**: Use `_()` functions for translatable strings
+
+### Code Quality Requirements
+- **Syntax Validation**: After every PHP file edit, run `php -l filename.php` for syntax checking
+- **Error Handling**: Implement comprehensive try-catch blocks with meaningful error messages
+- **JSON Output**: Support `--format json` option for all CLI commands and operations
+- **Security**: Never expose sensitive information in output or logs
+- **Performance**: Optimize database queries and API calls for production use
+
+## 🔧 Development Guidelines
+
+### Coding Standards
 - **PHP 8.1+**: Use strict types: `declare(strict_types=1);`
 - **PSR-4**: Follow autoloading standards with proper namespacing
 - **Error Handling**: Comprehensive try-catch with meaningful messages
@@ -248,6 +265,23 @@ class CachedDataProvider implements DataProviderInterface
 4. **Performance**: Include timing metadata for performance monitoring
 5. **Extensibility**: New modules should follow existing patterns
 6. **Dependencies**: Minimize external dependencies to maintain flexibility
+
+### Development Best Practices
+- **Code Comments**: Write in English using complete sentences and proper grammar
+- **Variable Names**: Use meaningful names that describe their purpose
+- **Constants**: Avoid magic numbers/strings; define constants instead
+- **Exception Handling**: Always provide meaningful error messages
+- **Commit Messages**: Use imperative mood and keep them concise
+- **Security**: Ensure code is secure and doesn't expose sensitive information
+- **Compatibility**: Maintain compatibility with latest PHP and library versions
+- **Testing**: Create/update PHPUnit test files for all new/modified classes
+- **Maintainability**: Follow best practices for maintainable code
+
+### Testing Requirements
+- **PHPUnit Integration**: All new classes require corresponding test files
+- **Test Coverage**: Aim for comprehensive test coverage of all functionality
+- **Mock Usage**: Use mocks for external dependencies during testing
+- **Test Structure**: Follow PSR-12 coding standards in test files
 
 When working with this codebase:
 - Always implement both interfaces when creating new components

@@ -3,13 +3,21 @@
 %:
 	dh $@ --with phpcomposer
 
+override_dh_auto_build:
+	# Generate Debian autoloader using phpab
+	phpabtpl --basedir src composer.json > debian/autoload.php.tpl
+	phpab --template debian/autoload.php.tpl --output src/autoload.php src/
+
 override_dh_install:
 	dh_install
-	jq '.version = "'`dpkg-parsechangelog | sed -n 's/^Version: //p'| sed 's/~.*//'`'"'  composer.json |sponge debian/php-vitexsoftware-digest-modules/usr/share/php/VitexSoftware/DigestModules/composer.json
-
-override_dh_auto_build:
-	composer update --no-dev
+	# Install the autoloader to /usr/share/php/VitexSoftware/DigestModules/
+	install -D -m 0644 src/autoload.php debian/php-vitexsoftware-digest-modules/usr/share/php/VitexSoftware/DigestModules/autoload.php
+	# Register the autoloader
+	install -d debian/php-vitexsoftware-digest-modules/usr/share/pkg-php-tools/autoloaders
+	echo 'vitexsoftware digest-modules VitexSoftware/DigestModules/autoload.php' > debian/php-vitexsoftware-digest-modules/usr/share/pkg-php-tools/autoloaders/php-vitexsoftware-digest-modules
+	# Update composer.json version
+	jq '.version = "'`dpkg-parsechangelog | sed -n 's/^Version: //p'| sed 's/~.*//'`'"' composer.json | sponge debian/php-vitexsoftware-digest-modules/usr/share/php/VitexSoftware/DigestModules/composer.json
 
 override_dh_auto_clean:
-	composer clear-cache
+	rm -f debian/autoload.php.tpl src/autoload.php
 	rm -rf vendor/
