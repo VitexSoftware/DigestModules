@@ -42,32 +42,36 @@ class BestSellers extends AbstractModule
             $invoices = $provider->getData(
                 DataProviderInterface::ENTITY_OUTCOMING_INVOICES,
                 [
-                    'date_period' => ['column' => 'datVyst', 'period' => $period],
-                    'relations' => 'polozkyDokladu',
-                    'limit' => 0,
+                    DataProviderInterface::FILTER_DATE_PERIOD => [
+                        'column' => DataProviderInterface::DATE_COLUMN_ISSUE_DATE,
+                        'period' => $period,
+                    ],
+                    DataProviderInterface::FILTER_WITH_ITEMS => true,
+                    DataProviderInterface::FILTER_LIMIT      => 0,
                 ],
-                ['polozkyDokladu(cenik,nazev,sumZkl,typPolozkyK)', 'typDokl'],
             );
 
             $products = [];
-            $totals = [];
+            $totals   = [];
 
             foreach ($invoices as $invoice) {
-                if (!\array_key_exists('polozkyDokladu', $invoice)) {
+                $items = $invoice[DataProviderInterface::FIELD_ITEMS] ?? [];
+
+                if (!is_array($items)) {
                     continue;
                 }
 
-                foreach ($invoice['polozkyDokladu'] as $item) {
-                    if (($item['typPolozkyK'] ?? '') !== 'typPolozky.katalog') {
+                foreach ($items as $item) {
+                    if (($item['item_type'] ?? '') !== DataProviderInterface::ITEM_TYPE_CATALOG) {
                         continue;
                     }
 
-                    $itemIdent = !empty($item['cenik'])
-                        ? (string) $item['cenik']
-                        : ($item['nazev'] ?? _('Unknown'));
+                    $itemIdent = !empty($item['product_code'])
+                        ? (string) $item['product_code']
+                        : ($item['name'] ?? _('Unknown'));
 
                     $products[$itemIdent] = ($products[$itemIdent] ?? 0) + 1;
-                    $totals[$itemIdent] = ($totals[$itemIdent] ?? 0.0) + (float) ($item['sumZkl'] ?? 0);
+                    $totals[$itemIdent]   = ($totals[$itemIdent] ?? 0.0) + (float) ($item['amount'] ?? 0);
                 }
             }
 
@@ -81,16 +85,14 @@ class BestSellers extends AbstractModule
                 }
 
                 $productList[] = [
-                    'code' => $code,
+                    'code'     => $code,
                     'quantity' => $count,
-                    'total' => $totals[$code] ?? 0.0,
+                    'total'    => $totals[$code] ?? 0.0,
                 ];
             }
 
             return $this->createResult($period, true, [
-                'summary' => [
-                    'total_products' => \count($productList),
-                ],
+                'summary'  => ['total_products' => \count($productList)],
                 'products' => $productList,
             ], [
                 'provider' => $provider->getSystemName(),
@@ -98,7 +100,7 @@ class BestSellers extends AbstractModule
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
         }
     }

@@ -21,30 +21,15 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
 /**
  * Outcoming invoices analysis module
  *
- * Analyzes issued invoices for the given period
+ * Analyzes issued invoices for the given period.
  *
  * @author Vítězslav Dvořák <info@vitexsoftware.cz>
  */
 class OutcomingInvoices extends AbstractModule
 {
-    /**
-     * {@inheritDoc}
-     */
     protected string $moduleName = 'outcoming_invoices';
-
-    /**
-     * {@inheritDoc}
-     */
     protected string $heading = 'Outcoming Invoices';
-
-    /**
-     * {@inheritDoc}
-     */
     protected string $description = 'Analysis of issued invoices including totals, document types, and currency breakdown';
-
-    /**
-     * {@inheritDoc}
-     */
     protected array $requiredFeatures = ['date_filtering', 'document_types'];
 
     /**
@@ -53,21 +38,16 @@ class OutcomingInvoices extends AbstractModule
     public function process(DataProviderInterface $provider, \DatePeriod $period): array
     {
         try {
-            // Get invoice data from the provider
-            $conditions = [
-                'date_period' => [
-                    'column' => 'datVyst',
-                    'period' => $period,
+            $invoicesData = $provider->getData(
+                DataProviderInterface::ENTITY_OUTCOMING_INVOICES,
+                [
+                    DataProviderInterface::FILTER_DATE_PERIOD => [
+                        'column' => DataProviderInterface::DATE_COLUMN_ISSUE_DATE,
+                        'period' => $period,
+                    ],
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
-                'limit' => 0, // Get all records
-            ];
-
-            $columns = [
-                'kod', 'typDokl', 'sumCelkem', 'sumCelkemMen',
-                'sumZalohy', 'sumZalohyMen', 'uhrazeno', 'storno', 'mena'
-            ];
-
-            $invoicesData = $provider->getData('outcoming_invoices', $conditions, $columns);
+            );
 
             if (empty($invoicesData)) {
                 return $this->createResult($period, true, [
@@ -79,142 +59,82 @@ class OutcomingInvoices extends AbstractModule
                 ]);
             }
 
-            // Process the data
-            $analysis = $this->analyzeInvoices($invoicesData);
-
-            return $this->createResult($period, true, $analysis, [
-                'processing_time' => microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'] ?? 0,
-            ]);
-
+            return $this->createResult($period, true, $this->analyzeInvoices($invoicesData));
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'error' => [
                     'message' => $e->getMessage(),
-                    'type' => get_class($e),
+                    'type'    => get_class($e),
                 ],
             ]);
         }
     }
 
-    /**
-     * Analyze invoices data
-     *
-     * @param array<array<string, mixed>> $invoicesData Raw invoice data
-     * @return array<string, mixed> Analyzed data
-     */
+    /** @param array<array<string, mixed>> $invoicesData */
     private function analyzeInvoices(array $invoicesData): array
     {
-        $totalCount = 0;
+        $totalCount       = 0;
+        $stornoCount      = 0;
         $totalsByCurrency = [];
-        $typDoklCounts = [];
-        $typDoklTotals = [];
-        $stornoCount = 0;
+        $typDoklCounts    = [];
+        $typDoklTotals    = [];
 
         foreach ($invoicesData as $invoice) {
-            $totalCount++;
+            ++$totalCount;
 
-            // Handle storno (cancelled) invoices
-            if (isset($invoice['storno']) && $invoice['storno'] === 'true') {
-                $stornoCount++;
-                continue; // Skip cancelled invoices in totals
+            if ($invoice[DataProviderInterface::FIELD_CANCELLED] ?? false) {
+                ++$stornoCount;
+                continue;
             }
 
-            $currency = $this->getCurrency($invoice);
-            $documentType = (string)($invoice['typDokl'] ?? 'unknown');
+            $currency     = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+            $documentType = (string) ($invoice[DataProviderInterface::FIELD_DOCUMENT_TYPE] ?? 'unknown');
+            $amount       = $currency !== 'CZK'
+                ? (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
+                    + (float) ($invoice[DataProviderInterface::FIELD_DEPOSIT_AMOUNT_FOREIGN] ?? 0)
+                : (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0)
+                    + (float) ($invoice[DataProviderInterface::FIELD_DEPOSIT_AMOUNT] ?? 0);
 
-            // Calculate amount (including deposits)
-            $amount = $this->calculateInvoiceAmount($invoice, $currency);
+            $totalsByCurrency[$currency] = ($totalsByCurrency[$currency] ?? 0.0) + $amount;
 
-            // Update totals by currency
-            if (!isset($totalsByCurrency[$currency])) {
-                $totalsByCurrency[$currency] = 0;
-            }
-            $totalsByCurrency[$currency] += $amount;
+            $typDoklCounts[$documentType] = ($typDoklCounts[$documentType] ?? 0) + 1;
 
-            // Update document type statistics
-            if (!isset($typDoklCounts[$documentType])) {
-                $typDoklCounts[$documentType] = 0;
+            if (!isset($typDoklTotals[$documentType])) {
                 $typDoklTotals[$documentType] = [];
             }
-            $typDoklCounts[$documentType]++;
 
-            if (!isset($typDoklTotals[$documentType][$currency])) {
-                $typDoklTotals[$documentType][$currency] = 0;
-            }
-            $typDoklTotals[$documentType][$currency] += $amount;
+            $typDoklTotals[$documentType][$currency] =
+                ($typDoklTotals[$documentType][$currency] ?? 0.0) + $amount;
         }
 
-        // Build structured result
         $analysis = [
             'summary' => [
-                'total_count' => $totalCount,
-                'active_count' => $totalCount - $stornoCount,
-                'cancelled_count' => $stornoCount,
+                'total_count'          => $totalCount,
+                'active_count'         => $totalCount - $stornoCount,
+                'cancelled_count'      => $stornoCount,
                 'document_types_count' => count($typDoklCounts),
-                'currencies' => array_keys($totalsByCurrency),
+                'currencies'           => array_keys($totalsByCurrency),
             ],
             'totals_by_currency' => [],
-            'by_document_type' => [],
+            'by_document_type'   => [],
         ];
 
-        // Format currency totals
         foreach ($totalsByCurrency as $currency => $total) {
             $analysis['totals_by_currency'][$currency] = $this->formatCurrency($total, $currency);
         }
 
-        // Format document type breakdown
         foreach ($typDoklTotals as $docType => $currencyTotals) {
             $analysis['by_document_type'][$docType] = [
-                'count' => $typDoklCounts[$docType],
+                'count'  => $typDoklCounts[$docType],
                 'totals' => [],
             ];
 
             foreach ($currencyTotals as $currency => $total) {
-                $analysis['by_document_type'][$docType]['totals'][$currency] = 
+                $analysis['by_document_type'][$docType]['totals'][$currency] =
                     $this->formatCurrency($total, $currency);
             }
         }
 
         return $analysis;
-    }
-
-    /**
-     * Get currency from invoice data
-     *
-     * @param array<string, mixed> $invoice Invoice data
-     * @return string Currency code
-     */
-    private function getCurrency(array $invoice): string
-    {
-        $currency = $invoice['mena'] ?? 'CZK';
-        
-        // Handle AbraFlexi currency format
-        if (is_array($currency) && isset($currency['kod'])) {
-            return (string)$currency['kod'];
-        }
-        
-        return (string)$currency;
-    }
-
-    /**
-     * Calculate total invoice amount including deposits
-     *
-     * @param array<string, mixed> $invoice Invoice data
-     * @param string $currency Currency code
-     * @return float Total amount
-     */
-    private function calculateInvoiceAmount(array $invoice, string $currency): float
-    {
-        if ($currency !== 'CZK') {
-            // Use foreign currency amounts
-            $base = (float)($invoice['sumCelkemMen'] ?? 0);
-            $deposit = (float)($invoice['sumZalohyMen'] ?? 0);
-        } else {
-            // Use CZK amounts
-            $base = (float)($invoice['sumCelkem'] ?? 0);
-            $deposit = (float)($invoice['sumZalohy'] ?? 0);
-        }
-
-        return $base + $deposit;
     }
 }

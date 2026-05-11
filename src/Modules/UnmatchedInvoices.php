@@ -42,45 +42,49 @@ class UnmatchedInvoices extends AbstractModule
             $proformas = $provider->getData(
                 DataProviderInterface::ENTITY_OUTCOMING_INVOICES,
                 [
-                    'date_period' => ['column' => 'datVyst', 'period' => $period],
-                    'storno' => false,
-                    'zuctovano' => false,
-                    'typDokl.typDoklK' => 'typDokladu.zalohFaktura',
-                    'stavUhrK' => 'stavUhr.uhrazeno',
-                    'limit' => 0,
+                    DataProviderInterface::FILTER_DATE_PERIOD => [
+                        'column' => DataProviderInterface::DATE_COLUMN_ISSUE_DATE,
+                        'period' => $period,
+                    ],
+                    DataProviderInterface::FILTER_CANCELLED      => false,
+                    DataProviderInterface::FILTER_ACCOUNTED      => false,
+                    DataProviderInterface::FILTER_DOCUMENT_TYPE  => DataProviderInterface::DOCUMENT_TYPE_PROFORMA,
+                    DataProviderInterface::FILTER_PAYMENT_STATUS => DataProviderInterface::PAYMENT_STATUS_PAID,
+                    DataProviderInterface::FILTER_LIMIT          => 0,
                 ],
-                ['kod', 'mena', 'popis', 'sumCelkem', 'sumCelkemMen',
-                    'stavOdpocetK', 'typDokl', 'firma', 'datVyst'],
             );
 
-            $totalsByCurrency = [];
-            $countsByCurrency = [];
-            $invoiceList = [];
+            $totalsByCurrency  = [];
+            $countsByCurrency  = [];
+            $invoiceList       = [];
 
             foreach ($proformas as $proforma) {
-                $deductionState = $proforma['stavOdpocetK'] ?? '';
+                $deductionStatus = (string) ($proforma[DataProviderInterface::FIELD_DEDUCTION_STATUS] ?? '');
 
                 // Skip fully deducted or with tax document created
-                if (\in_array($deductionState, ['stavOdp.komplet', 'stavOdp.vytvZdd'], true)) {
+                if (\in_array($deductionStatus, [
+                    DataProviderInterface::DEDUCTION_STATUS_COMPLETE,
+                    DataProviderInterface::DEDUCTION_STATUS_TAX_DOCUMENT_CREATED,
+                ], true)) {
                     continue;
                 }
 
-                $currency = $this->extractCurrency($proforma);
-                $amount = ($currency === 'CZK')
-                    ? (float) ($proforma['sumCelkem'] ?? 0)
-                    : (float) ($proforma['sumCelkemMen'] ?? 0);
+                $currency = (string) ($proforma[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+                $amount   = $currency !== 'CZK'
+                    ? (float) ($proforma[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
+                    : (float) ($proforma[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
 
-                $totalsByCurrency[$currency] = ($totalsByCurrency[$currency] ?? 0.0) + $amount;
-                $countsByCurrency[$currency] = ($countsByCurrency[$currency] ?? 0) + 1;
+                $totalsByCurrency[$currency]  = ($totalsByCurrency[$currency] ?? 0.0) + $amount;
+                $countsByCurrency[$currency]  = ($countsByCurrency[$currency] ?? 0) + 1;
 
                 $invoiceList[] = [
-                    'code' => $proforma['kod'] ?? '',
-                    'description' => $proforma['popis'] ?? '',
-                    'deduction_state' => $deductionState,
-                    'document_type' => (string) ($proforma['typDokl'] ?? ''),
-                    'company' => (string) ($proforma['firma'] ?? ''),
-                    'date' => (string) ($proforma['datVyst'] ?? ''),
-                    'amount' => $this->formatCurrency($amount, $currency),
+                    'code'             => $proforma[DataProviderInterface::FIELD_CODE] ?? '',
+                    'description'      => $proforma[DataProviderInterface::FIELD_DESCRIPTION] ?? '',
+                    'deduction_status' => $deductionStatus,
+                    'document_type'    => $proforma[DataProviderInterface::FIELD_DOCUMENT_TYPE] ?? '',
+                    'company'          => $proforma[DataProviderInterface::FIELD_COMPANY] ?? '',
+                    'date'             => $proforma[DataProviderInterface::FIELD_DATE] ?? '',
+                    'amount'           => $this->formatCurrency($amount, $currency),
                 ];
             }
 
@@ -94,29 +98,17 @@ class UnmatchedInvoices extends AbstractModule
             }
 
             return $this->createResult($period, true, [
-                'summary' => [
-                    'total_count' => \count($invoiceList),
-                ],
+                'summary'            => ['total_count' => \count($invoiceList)],
                 'totals_by_currency' => $formattedTotals,
-                'invoices' => $invoiceList,
+                'invoices'           => $invoiceList,
             ], [
                 'provider' => $provider->getSystemName(),
             ]);
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
         }
-    }
-
-    /**
-     * Extract currency code from invoice data
-     */
-    private function extractCurrency(array $invoice): string
-    {
-        $mena = $invoice['mena'] ?? 'CZK';
-
-        return \is_string($mena) ? str_replace('code:', '', $mena) : 'CZK';
     }
 }

@@ -41,29 +41,26 @@ class WithoutTel extends AbstractModule
             $contacts = $provider->getData(
                 DataProviderInterface::ENTITY_CONTACTS,
                 [
-                    'tel is empty AND mobil is empty',
-                    "(typVztahuK='typVztahu.odberDodav' OR typVztahuK='typVztahu.odberatel')",
-                    'limit' => 0,
+                    DataProviderInterface::FILTER_MISSING_PHONE => true,
+                    DataProviderInterface::FILTER_RELATIONSHIP  => 'customer',
+                    DataProviderInterface::FILTER_LIMIT         => 0,
                 ],
-                ['nazev', 'kod', 'ulice', 'mesto', 'email'],
             );
 
             $contactList = [];
 
             foreach ($contacts as $contact) {
                 $contactList[] = [
-                    'name' => $contact['nazev'] ?? '',
-                    'code' => $contact['kod'] ?? '',
-                    'street' => $contact['ulice'] ?? '',
-                    'city' => $contact['mesto'] ?? '',
-                    'email' => $contact['email'] ?? '',
+                    'name'   => $contact[DataProviderInterface::FIELD_NAME] ?? '',
+                    'code'   => $contact[DataProviderInterface::FIELD_CODE] ?? '',
+                    'street' => $contact[DataProviderInterface::FIELD_STREET] ?? '',
+                    'city'   => $contact[DataProviderInterface::FIELD_CITY] ?? '',
+                    'email'  => $contact[DataProviderInterface::FIELD_EMAIL] ?? '',
                 ];
             }
 
             return $this->createResult($period, true, [
-                'summary' => [
-                    'total_count' => \count($contactList),
-                ],
+                'summary'  => ['total_count' => \count($contactList)],
                 'contacts' => $contactList,
             ], [
                 'provider' => $provider->getSystemName(),
@@ -71,7 +68,7 @@ class WithoutTel extends AbstractModule
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
         }
     }

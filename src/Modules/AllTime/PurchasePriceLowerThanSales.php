@@ -39,40 +39,36 @@ class PurchasePriceLowerThanSales extends AbstractModule
     public function process(DataProviderInterface $provider, \DatePeriod $period): array
     {
         try {
-            $productsRaw = $provider->getData(
+            $products = $provider->getData(
                 DataProviderInterface::ENTITY_PRODUCTS,
                 [
-                    'nakupCena' => 'is not empty',
-                    'cenaZakl' => 'is not empty',
-                    'limit' => 0,
+                    DataProviderInterface::FILTER_HAS_BUY_PRICE  => true,
+                    DataProviderInterface::FILTER_HAS_SELL_PRICE => true,
+                    DataProviderInterface::FILTER_LIMIT          => 0,
                 ],
-                ['kod', 'nazev', 'nakupCena', 'cenaZakl'],
             );
 
             $disadvantageous = [];
 
-            foreach ($productsRaw as $product) {
-                $buyPrice = (float) ($product['nakupCena'] ?? 0);
-                $sellPrice = (float) ($product['cenaZakl'] ?? 0);
+            foreach ($products as $product) {
+                $buyPrice  = (float) ($product[DataProviderInterface::FIELD_BUY_PRICE] ?? 0);
+                $sellPrice = (float) ($product[DataProviderInterface::FIELD_SELL_PRICE] ?? 0);
 
                 if ($buyPrice > $sellPrice && $sellPrice > 0) {
                     $disadvantageous[] = [
-                        'code' => $product['kod'] ?? '',
-                        'name' => $product['nazev'] ?? '',
-                        'buy_price' => $buyPrice,
+                        'code'       => $product[DataProviderInterface::FIELD_CODE] ?? '',
+                        'name'       => $product[DataProviderInterface::FIELD_NAME] ?? '',
+                        'buy_price'  => $buyPrice,
                         'sell_price' => $sellPrice,
                         'difference' => $buyPrice - $sellPrice,
                     ];
                 }
             }
 
-            // Sort by difference descending
             usort($disadvantageous, static fn ($a, $b) => $b['difference'] <=> $a['difference']);
 
             return $this->createResult($period, true, [
-                'summary' => [
-                    'total_count' => \count($disadvantageous),
-                ],
+                'summary'  => ['total_count' => \count($disadvantageous)],
                 'products' => $disadvantageous,
             ], [
                 'provider' => $provider->getSystemName(),
@@ -80,7 +76,7 @@ class PurchasePriceLowerThanSales extends AbstractModule
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
         }
     }

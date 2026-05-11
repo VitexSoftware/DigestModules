@@ -43,37 +43,36 @@ class IncomingInvoices extends AbstractModule implements ZabbixOutputInterface
             $invoices = $provider->getData(
                 DataProviderInterface::ENTITY_INCOMING_INVOICES,
                 [
-                    'date_period' => [
-                        'column' => 'datVyst',
+                    DataProviderInterface::FILTER_DATE_PERIOD => [
+                        'column' => DataProviderInterface::DATE_COLUMN_ISSUE_DATE,
                         'period' => $period,
                     ],
-                    'limit' => 0,
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
-                ['kod', 'typDokl', 'sumCelkem', 'sumCelkemMen', 'storno', 'mena'],
             );
 
             if (empty($invoices)) {
                 return $this->createResult($period, true, [
                     'summary' => [
-                        'total_count' => 0,
-                        'active_count' => 0,
+                        'total_count'     => 0,
+                        'active_count'    => 0,
                         'cancelled_count' => 0,
                     ],
                     'totals_by_currency' => [],
-                    'by_document_type' => [],
+                    'by_document_type'   => [],
                 ]);
             }
 
             $analysis = $this->analyzeInvoices($invoices);
 
             return $this->createResult($period, true, $analysis, [
-                'provider' => $provider->getSystemName(),
-                'records_processed' => \count($invoices),
+                'provider'           => $provider->getSystemName(),
+                'records_processed'  => \count($invoices),
             ]);
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
         }
     }
@@ -83,71 +82,50 @@ class IncomingInvoices extends AbstractModule implements ZabbixOutputInterface
      */
     public function toZabbixItems(array $processedData): array
     {
-        $data = $processedData['data'] ?? [];
+        $data    = $processedData['data'] ?? [];
         $summary = $data['summary'] ?? [];
 
         return [
-            'incoming_invoices.count' => $summary['total_count'] ?? 0,
-            'incoming_invoices.active_count' => $summary['active_count'] ?? 0,
+            'incoming_invoices.count'           => $summary['total_count'] ?? 0,
+            'incoming_invoices.active_count'    => $summary['active_count'] ?? 0,
             'incoming_invoices.cancelled_count' => $summary['cancelled_count'] ?? 0,
         ];
     }
 
-    /**
-     * Analyze invoice data
-     *
-     * @param array<int, array<string, mixed>> $invoices Raw invoice records
-     *
-     * @return array<string, mixed> Analysis results
-     */
+    /** @param array<int, array<string, mixed>> $invoices */
     private function analyzeInvoices(array $invoices): array
     {
         $totalsByCurrency = [];
-        $byDocumentType = [];
-        $activeCount = 0;
-        $cancelledCount = 0;
+        $byDocumentType   = [];
+        $activeCount      = 0;
+        $cancelledCount   = 0;
 
         foreach ($invoices as $invoice) {
-            $currency = $this->extractCurrency($invoice);
-            $amount = ($currency === 'CZK')
-                ? (float) ($invoice['sumCelkem'] ?? 0)
-                : (float) ($invoice['sumCelkemMen'] ?? 0);
-            $documentType = (string) ($invoice['typDokl'] ?? _('Unknown'));
-            $isCancelled = ($invoice['storno'] ?? '') === 'true';
+            $currency     = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+            $amount       = $currency !== 'CZK'
+                ? (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
+                : (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
+            $documentType = (string) ($invoice[DataProviderInterface::FIELD_DOCUMENT_TYPE] ?? _('Unknown'));
+            $cancelled    = (bool) ($invoice[DataProviderInterface::FIELD_CANCELLED] ?? false);
 
-            if ($isCancelled) {
+            if ($cancelled) {
                 ++$cancelledCount;
-
                 continue;
             }
 
             ++$activeCount;
 
-            // Totals by currency
-            if (!isset($totalsByCurrency[$currency])) {
-                $totalsByCurrency[$currency] = 0.0;
-            }
+            $totalsByCurrency[$currency] = ($totalsByCurrency[$currency] ?? 0.0) + $amount;
 
-            $totalsByCurrency[$currency] += $amount;
-
-            // By document type
             if (!isset($byDocumentType[$documentType])) {
-                $byDocumentType[$documentType] = [
-                    'count' => 0,
-                    'totals' => [],
-                ];
+                $byDocumentType[$documentType] = ['count' => 0, 'totals' => []];
             }
 
             ++$byDocumentType[$documentType]['count'];
-
-            if (!isset($byDocumentType[$documentType]['totals'][$currency])) {
-                $byDocumentType[$documentType]['totals'][$currency] = 0.0;
-            }
-
-            $byDocumentType[$documentType]['totals'][$currency] += $amount;
+            $byDocumentType[$documentType]['totals'][$currency] =
+                ($byDocumentType[$documentType]['totals'][$currency] ?? 0.0) + $amount;
         }
 
-        // Format currency totals
         $formattedTotals = [];
 
         foreach ($totalsByCurrency as $currency => $total) {
@@ -163,39 +141,17 @@ class IncomingInvoices extends AbstractModule implements ZabbixOutputInterface
                 $typeTotals[$currency] = $this->formatCurrency($total, $currency);
             }
 
-            $formattedByType[$type] = [
-                'count' => $typeData['count'],
-                'totals' => $typeTotals,
-            ];
+            $formattedByType[$type] = ['count' => $typeData['count'], 'totals' => $typeTotals];
         }
 
         return [
             'summary' => [
-                'total_count' => $activeCount + $cancelledCount,
-                'active_count' => $activeCount,
+                'total_count'     => $activeCount + $cancelledCount,
+                'active_count'    => $activeCount,
                 'cancelled_count' => $cancelledCount,
             ],
             'totals_by_currency' => $formattedTotals,
-            'by_document_type' => $formattedByType,
+            'by_document_type'   => $formattedByType,
         ];
-    }
-
-    /**
-     * Extract currency code from invoice data
-     *
-     * @param array<string, mixed> $invoice Invoice record
-     *
-     * @return string Currency code (e.g. 'CZK', 'EUR')
-     */
-    private function extractCurrency(array $invoice): string
-    {
-        $mena = $invoice['mena'] ?? 'CZK';
-
-        if (\is_string($mena)) {
-            // Handle 'code:CZK' format
-            return str_replace('code:', '', $mena);
-        }
-
-        return 'CZK';
     }
 }

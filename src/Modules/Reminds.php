@@ -39,60 +39,56 @@ class Reminds extends AbstractModule
     public function process(DataProviderInterface $provider, \DatePeriod $period): array
     {
         try {
-            // Reminders are tracked on outcoming invoices via datUp1, datUp2, datSmir columns
             $invoices = $provider->getData(
                 DataProviderInterface::ENTITY_REMINDERS,
                 [
-                    'date_period' => ['column' => 'datUp1', 'period' => $period],
-                    'limit' => 0,
+                    DataProviderInterface::FILTER_DATE_PERIOD => [
+                        'column' => DataProviderInterface::DATE_COLUMN_FIRST_REMINDER,
+                        'period' => $period,
+                    ],
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
-                ['kod', 'firma', 'popis', 'sumCelkem', 'sumCelkemMen',
-                    'zbyvaUhradit', 'zbyvaUhraditMen', 'mena', 'datUp1', 'datUp2', 'datSmir'],
             );
 
-            $reminderCounts = [
-                'first' => 0,
-                'second' => 0,
-                'pre_litigation' => 0,
-            ];
-            $invoiceList = [];
+            $reminderCounts = ['first' => 0, 'second' => 0, 'pre_litigation' => 0];
+            $invoiceList    = [];
 
             foreach ($invoices as $invoice) {
-                $currency = $this->extractCurrency($invoice);
-                $remaining = ($currency === 'CZK')
-                    ? (float) ($invoice['zbyvaUhradit'] ?? 0)
-                    : (float) ($invoice['zbyvaUhraditMen'] ?? 0);
+                $currency  = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+                $remaining = $currency !== 'CZK'
+                    ? (float) ($invoice[DataProviderInterface::FIELD_REMAINING_AMOUNT_FOREIGN] ?? 0)
+                    : (float) ($invoice[DataProviderInterface::FIELD_REMAINING_AMOUNT] ?? 0);
 
-                $hasFirst = !empty($invoice['datUp1']) && $this->isDateInPeriod($invoice['datUp1'], $period);
-                $hasSecond = !empty($invoice['datUp2']) && $this->isDateInPeriod($invoice['datUp2'], $period);
-                $hasPreLitigation = !empty($invoice['datSmir']) && $this->isDateInPeriod($invoice['datSmir'], $period);
+                $firstDate  = $invoice[DataProviderInterface::FIELD_FIRST_REMINDER_DATE] ?? '';
+                $secondDate = $invoice[DataProviderInterface::FIELD_SECOND_REMINDER_DATE] ?? '';
+                $preDate    = $invoice[DataProviderInterface::FIELD_PRE_LITIGATION_DATE] ?? '';
 
-                if ($hasFirst) {
+                if (!empty($firstDate) && $this->isDateInPeriod($firstDate, $period)) {
                     ++$reminderCounts['first'];
                 }
 
-                if ($hasSecond) {
+                if (!empty($secondDate) && $this->isDateInPeriod($secondDate, $period)) {
                     ++$reminderCounts['second'];
                 }
 
-                if ($hasPreLitigation) {
+                if (!empty($preDate) && $this->isDateInPeriod($preDate, $period)) {
                     ++$reminderCounts['pre_litigation'];
                 }
 
                 $invoiceList[] = [
-                    'code' => $invoice['kod'] ?? '',
-                    'company' => (string) ($invoice['firma'] ?? ''),
-                    'description' => $invoice['popis'] ?? '',
-                    'remaining' => $this->formatCurrency($remaining, $currency),
-                    'first_reminder' => $invoice['datUp1'] ?? null,
-                    'second_reminder' => $invoice['datUp2'] ?? null,
-                    'pre_litigation' => $invoice['datSmir'] ?? null,
+                    'code'             => $invoice[DataProviderInterface::FIELD_CODE] ?? '',
+                    'company'          => $invoice[DataProviderInterface::FIELD_COMPANY] ?? '',
+                    'description'      => $invoice[DataProviderInterface::FIELD_DESCRIPTION] ?? '',
+                    'remaining'        => $this->formatCurrency($remaining, $currency),
+                    'first_reminder'   => $firstDate,
+                    'second_reminder'  => $secondDate,
+                    'pre_litigation'   => $preDate,
                 ];
             }
 
             return $this->createResult($period, true, [
                 'summary' => [
-                    'total_invoices' => \count($invoices),
+                    'total_invoices'  => \count($invoices),
                     'reminder_counts' => $reminderCounts,
                     'total_reminders' => array_sum($reminderCounts),
                 ],
@@ -103,35 +99,23 @@ class Reminds extends AbstractModule
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
         }
     }
 
-    /**
-     * Check if a date falls within the given period
-     *
-     * @param mixed $date Date value (DateTime or string)
-     * @param \DatePeriod $period Period to check against
-     */
-    private function isDateInPeriod(mixed $date, \DatePeriod $period): bool
+    private function isDateInPeriod(string $dateStr, \DatePeriod $period): bool
     {
-        try {
-            $dateObj = ($date instanceof \DateTime) ? $date : new \DateTime((string) $date);
+        if (empty($dateStr)) {
+            return false;
+        }
 
-            return $dateObj >= $period->getStartDate() && $dateObj <= $period->getEndDate();
+        try {
+            $date = new \DateTime($dateStr);
+
+            return $date >= $period->getStartDate() && $date <= $period->getEndDate();
         } catch (\Exception) {
             return false;
         }
-    }
-
-    /**
-     * Extract currency code from invoice data
-     */
-    private function extractCurrency(array $invoice): string
-    {
-        $mena = $invoice['mena'] ?? 'CZK';
-
-        return \is_string($mena) ? str_replace('code:', '', $mena) : 'CZK';
     }
 }

@@ -2,7 +2,7 @@
     "name": "vitexsoftware/digest-modules",
     "description": "System-agnostic data collection modules for accounting digest reports, Zabbix monitoring, and analytics",
     "type": "library",
-    "keywords": ["digest", "analytics", "accounting", "abraflexi", "pohoda", "zabbix", "data", "modules"],
+    "keywords": ["digest", "analytics", "accounting", "zabbix", "data", "modules"],
     "homepage": "https://github.com/VitexSoftware/DigestModules",
     "license": "MIT",
     "authors": [
@@ -17,10 +17,6 @@
         "ext-gettext": "*",
         "ext-intl": "*",
         "ext-json": "*"
-    },
-    "suggest": {
-        "spojenet/flexibee": "Required for AbraFlexiDataProvider (AbraFlexi accounting system)",
-        "vitexsoftware/pohoda-connector": "Required for PohodaDataProvider (Pohoda accounting system)"
     },
     "autoload": {
         "psr-4": {

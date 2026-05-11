@@ -22,7 +22,6 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
  * Weekly income chart data module
  *
  * Aggregates incoming bank payments by day for weekly chart visualization.
- * Same data structure as DailyIncomeChart but intended for weekly digest.
  *
  * @author Vítězslav Dvořák <info@vitexsoftware.cz>
  */
@@ -42,41 +41,43 @@ class WeeklyIncomeChart extends AbstractModule
             $incomes = $provider->getData(
                 DataProviderInterface::ENTITY_BANK_STATEMENTS,
                 [
-                    'date_period' => ['column' => 'datVyst', 'period' => $period],
-                    'typPohybuK' => 'typPohybu.prijem',
-                    'storno' => false,
-                    'limit' => 0,
+                    DataProviderInterface::FILTER_DATE_PERIOD => [
+                        'column' => DataProviderInterface::DATE_COLUMN_ISSUE_DATE,
+                        'period' => $period,
+                    ],
+                    DataProviderInterface::FILTER_PAYMENT_DIRECTION => DataProviderInterface::DIRECTION_INCOMING,
+                    DataProviderInterface::FILTER_CANCELLED         => false,
+                    DataProviderInterface::FILTER_LIMIT             => 0,
                 ],
-                ['mena', 'sumCelkem', 'sumCelkemMen', 'datVyst'],
             );
 
             if (empty($incomes)) {
                 return $this->createResult($period, true, [
-                    'summary' => ['total_days' => 0],
-                    'days' => [],
+                    'summary'  => ['total_days' => 0],
+                    'days'     => [],
                     'averages' => [],
                 ]);
             }
 
-            $days = [];
+            $days           = [];
             $currencyTotals = [];
 
             foreach ($incomes as $income) {
-                $currency = $this->extractCurrency($income);
-                $amount = ($currency === 'CZK')
-                    ? (float) ($income['sumCelkem'] ?? 0)
-                    : (float) ($income['sumCelkemMen'] ?? 0);
-                $day = (string) ($income['datVyst'] ?? '');
+                $currency = (string) ($income[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+                $amount   = $currency !== 'CZK'
+                    ? (float) ($income[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
+                    : (float) ($income[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
+                $day      = (string) ($income[DataProviderInterface::FIELD_DATE] ?? '');
 
                 if (empty($day)) {
                     continue;
                 }
 
-                $days[$day][$currency] = ($days[$day][$currency] ?? 0.0) + $amount;
+                $days[$day][$currency]     = ($days[$day][$currency] ?? 0.0) + $amount;
                 $currencyTotals[$currency] = ($currencyTotals[$currency] ?? 0.0) + $amount;
             }
 
-            $averages = [];
+            $averages      = [];
 
             foreach ($currencyTotals as $currency => $total) {
                 $daysWithCurrency = 0;
@@ -88,8 +89,8 @@ class WeeklyIncomeChart extends AbstractModule
                 }
 
                 $averages[$currency] = [
-                    'average' => $daysWithCurrency > 0 ? ceil($total / $daysWithCurrency) : 0,
-                    'total' => $total,
+                    'average'    => $daysWithCurrency > 0 ? ceil($total / $daysWithCurrency) : 0,
+                    'total'      => $total,
                     'days_count' => $daysWithCurrency,
                 ];
             }
@@ -100,10 +101,10 @@ class WeeklyIncomeChart extends AbstractModule
                 $dayEntry = ['date' => $day, 'currencies' => []];
 
                 foreach ($currencies as $currency => $amount) {
-                    $avg = $averages[$currency]['average'] ?? 1;
+                    $avg     = $averages[$currency]['average'] ?? 1;
                     $percent = $avg > 0 ? round(($amount / $avg) * 100) : 0;
                     $dayEntry['currencies'][$currency] = [
-                        'amount' => $amount,
+                        'amount'             => $amount,
                         'percent_of_average' => $percent,
                     ];
                 }
@@ -112,11 +113,8 @@ class WeeklyIncomeChart extends AbstractModule
             }
 
             return $this->createResult($period, true, [
-                'summary' => [
-                    'total_days' => \count($days),
-                    'currencies' => array_keys($currencyTotals),
-                ],
-                'days' => $formattedDays,
+                'summary'  => ['total_days' => \count($days), 'currencies' => array_keys($currencyTotals)],
+                'days'     => $formattedDays,
                 'averages' => $averages,
             ], [
                 'provider' => $provider->getSystemName(),
@@ -124,18 +122,8 @@ class WeeklyIncomeChart extends AbstractModule
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
         }
-    }
-
-    /**
-     * Extract currency code from payment data
-     */
-    private function extractCurrency(array $payment): string
-    {
-        $mena = $payment['mena'] ?? 'CZK';
-
-        return \is_string($mena) ? str_replace('code:', '', $mena) : 'CZK';
     }
 }

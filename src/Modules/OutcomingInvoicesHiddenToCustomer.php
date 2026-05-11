@@ -22,7 +22,7 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
  * Outcoming invoices hidden to customer module
  *
  * Identifies issued invoices that have not been emailed
- * to the customer (mail status is 'to send' or empty).
+ * to the customer (mail status is 'pending' or 'empty').
  *
  * @author Vítězslav Dvořák <info@vitexsoftware.cz>
  */
@@ -42,32 +42,32 @@ class OutcomingInvoicesHiddenToCustomer extends AbstractModule
             $invoices = $provider->getData(
                 DataProviderInterface::ENTITY_OUTCOMING_INVOICES,
                 [
-                    'date_period' => ['column' => 'datVyst', 'period' => $period],
-                    "((stavMailK eq 'stavMail.odeslat') OR (stavMailK is null))",
-                    'storno' => false,
-                    'limit' => 0,
+                    DataProviderInterface::FILTER_DATE_PERIOD => [
+                        'column' => DataProviderInterface::DATE_COLUMN_ISSUE_DATE,
+                        'period' => $period,
+                    ],
+                    DataProviderInterface::FILTER_MAIL_PENDING => true,
+                    DataProviderInterface::FILTER_CANCELLED    => false,
+                    DataProviderInterface::FILTER_LIMIT        => 0,
                 ],
-                ['kod', 'typDokl', 'firma', 'stavMailK', 'kontaktEmail'],
             );
 
             $invoiceList = [];
 
             foreach ($invoices as $invoice) {
-                $mailStatus = empty($invoice['stavMailK']) ? 'empty' : 'to_send';
+                $mailStatus = $invoice[DataProviderInterface::FIELD_MAIL_STATUS] ?? DataProviderInterface::MAIL_STATUS_EMPTY;
 
                 $invoiceList[] = [
-                    'code' => $invoice['kod'] ?? '',
-                    'document_type' => (string) ($invoice['typDokl'] ?? ''),
-                    'company' => (string) ($invoice['firma'] ?? ''),
-                    'mail_status' => $mailStatus,
-                    'contact_email' => $invoice['kontaktEmail'] ?? '',
+                    'code'          => $invoice[DataProviderInterface::FIELD_CODE] ?? '',
+                    'document_type' => $invoice[DataProviderInterface::FIELD_DOCUMENT_TYPE] ?? '',
+                    'company'       => $invoice[DataProviderInterface::FIELD_COMPANY] ?? '',
+                    'mail_status'   => $mailStatus,
+                    'contact_email' => $invoice[DataProviderInterface::FIELD_CONTACT_EMAIL] ?? '',
                 ];
             }
 
             return $this->createResult($period, true, [
-                'summary' => [
-                    'total_count' => \count($invoiceList),
-                ],
+                'summary'  => ['total_count' => \count($invoiceList)],
                 'invoices' => $invoiceList,
             ], [
                 'provider' => $provider->getSystemName(),
@@ -75,7 +75,7 @@ class OutcomingInvoicesHiddenToCustomer extends AbstractModule
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
         }
     }

@@ -43,34 +43,36 @@ class UnmatchedPayments extends AbstractModule implements ZabbixOutputInterface
             $payments = $provider->getData(
                 DataProviderInterface::ENTITY_BANK_STATEMENTS,
                 [
-                    'date_period' => ['column' => 'datVyst', 'period' => $period],
-                    'typPohybuK' => 'typPohybu.prijem',
-                    'storno' => false,
-                    'zuctovano' => false,
-                    'sparovano' => false,
-                    'limit' => 0,
+                    DataProviderInterface::FILTER_DATE_PERIOD => [
+                        'column' => DataProviderInterface::DATE_COLUMN_ISSUE_DATE,
+                        'period' => $period,
+                    ],
+                    DataProviderInterface::FILTER_PAYMENT_DIRECTION => DataProviderInterface::DIRECTION_INCOMING,
+                    DataProviderInterface::FILTER_CANCELLED          => false,
+                    DataProviderInterface::FILTER_ACCOUNTED          => false,
+                    DataProviderInterface::FILTER_MATCHED            => false,
+                    DataProviderInterface::FILTER_LIMIT              => 0,
                 ],
-                ['kod', 'mena', 'popis', 'sumCelkem', 'sumCelkemMen', 'buc', 'firma', 'datVyst'],
             );
 
             $totalsByCurrency = [];
-            $paymentList = [];
+            $paymentList      = [];
 
             foreach ($payments as $payment) {
-                $currency = $this->extractCurrency($payment);
-                $amount = ($currency === 'CZK')
-                    ? (float) ($payment['sumCelkem'] ?? 0)
-                    : (float) ($payment['sumCelkemMen'] ?? 0);
+                $currency = (string) ($payment[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+                $amount   = $currency !== 'CZK'
+                    ? (float) ($payment[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
+                    : (float) ($payment[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
 
                 $totalsByCurrency[$currency] = ($totalsByCurrency[$currency] ?? 0.0) + $amount;
 
                 $paymentList[] = [
-                    'code' => $payment['kod'] ?? '',
-                    'description' => $payment['popis'] ?? '',
-                    'bank_account' => $payment['buc'] ?? '',
-                    'company' => (string) ($payment['firma'] ?? ''),
-                    'date' => (string) ($payment['datVyst'] ?? ''),
-                    'amount' => $this->formatCurrency($amount, $currency),
+                    'code'         => $payment[DataProviderInterface::FIELD_CODE] ?? '',
+                    'description'  => $payment[DataProviderInterface::FIELD_DESCRIPTION] ?? '',
+                    'bank_account' => $payment[DataProviderInterface::FIELD_BANK_ACCOUNT] ?? '',
+                    'company'      => $payment[DataProviderInterface::FIELD_COMPANY] ?? '',
+                    'date'         => $payment[DataProviderInterface::FIELD_DATE] ?? '',
+                    'amount'       => $this->formatCurrency($amount, $currency),
                 ];
             }
 
@@ -84,21 +86,18 @@ class UnmatchedPayments extends AbstractModule implements ZabbixOutputInterface
 
             return $this->createResult($period, true, [
                 'summary' => [
-                    'total_count' => \count($payments),
-                    'total_amount' => $this->formatCurrency(
-                        $totalsByCurrency[$mainCurrency] ?? 0.0,
-                        $mainCurrency,
-                    ),
+                    'total_count'  => \count($payments),
+                    'total_amount' => $this->formatCurrency($totalsByCurrency[$mainCurrency] ?? 0.0, $mainCurrency),
                 ],
                 'totals_by_currency' => $formattedTotals,
-                'payments' => $paymentList,
+                'payments'           => $paymentList,
             ], [
                 'provider' => $provider->getSystemName(),
             ]);
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
         }
     }
@@ -108,22 +107,12 @@ class UnmatchedPayments extends AbstractModule implements ZabbixOutputInterface
      */
     public function toZabbixItems(array $processedData): array
     {
-        $data = $processedData['data'] ?? [];
+        $data    = $processedData['data'] ?? [];
         $summary = $data['summary'] ?? [];
 
         return [
-            'unmatched_payments.count' => $summary['total_count'] ?? 0,
+            'unmatched_payments.count'        => $summary['total_count'] ?? 0,
             'unmatched_payments.total_amount' => $summary['total_amount']['amount'] ?? 0,
         ];
-    }
-
-    /**
-     * Extract currency code from payment data
-     */
-    private function extractCurrency(array $payment): string
-    {
-        $mena = $payment['mena'] ?? 'CZK';
-
-        return \is_string($mena) ? str_replace('code:', '', $mena) : 'CZK';
     }
 }
