@@ -1,177 +1,175 @@
-# DigestModules 📊
+# DigestModules
 
-> **Modular Analytics Library for Accounting Systems**
+> **System-agnostic data collection modules for accounting digest reports**
 
-A standalone PHP library that provides **data collection and analytics modules** for accounting systems, returning structured JSON data for further processing or visualization.
+A standalone PHP library providing analytics modules that work with any accounting system through a neutral `DataProviderInterface`. Modules return structured arrays — no HTML, no rendering, no system-specific code.
 
-## 🎯 Overview
+## Overview
 
-DigestModules is the **data collection engine** that:
+DigestModules is the **analytics engine** that:
 
-- 🔌 **Connects to accounting systems** (AbraFlexi, Pohoda, Money S3, etc.)
-- 📈 **Analyzes business data** (invoices, customers, payments, etc.)
-- 📋 **Returns structured JSON** (no HTML - pure data layer)
-- 🧩 **Modular architecture** (easy to extend with new analytics)
-- 🔄 **System-agnostic design** (works across different accounting platforms)
+- Defines a neutral vocabulary (`FILTER_*`, `FIELD_*`, `ENTITY_*` constants) for conditions and return fields
+- Provides ready-made modules: invoices, payments, debtors, customers, products, reminders
+- Stays completely decoupled from AbraFlexi, Pohoda, or any specific accounting system
+- Returns structured data ready for rendering or further processing
 
-## ✨ Key Features
+Data providers (e.g. `AbraFlexiDataProvider` in `vitexsoftware/abraflexi-digest`) implement the interface and translate the neutral schema to system-specific queries.
 
-- **🎯 Pure Data Layer**: Returns JSON arrays - no HTML generation
-- **🔌 Multiple Providers**: AbraFlexi, Pohoda, and custom system support
-- **📊 Built-in Analytics**: Invoice analysis, debt monitoring, financial insights
-- **🧩 Modular Design**: Easy to add new modules and data sources  
-- **⚡ Performance**: Optimized queries with caching support
-- **🛡️ Type Safe**: Full PHP 8.1+ type declarations with strict types
-- **📝 PSR-4 Compliant**: Follows PHP-FIG standards
-- **🔍 Comprehensive Testing**: PHPUnit test coverage
-
-## 🚀 Quick Start
-
-### Installation
+## Installation
 
 ```bash
-# Via Composer
 composer require vitexsoftware/digest-modules
-
-# Via Debian Package  
-sudo apt install php-vitexsoftware-digest-modules
 ```
 
-### Basic Usage
+## Quick Start
 
 ```php
 <?php
 use VitexSoftware\DigestModules\Core\ModuleRunner;
-use VitexSoftware\DigestModules\Providers\AbraFlexiDataProvider;
+use VitexSoftware\DigestModules\Modules\Debtors;
+use VitexSoftware\DigestModules\Modules\OutcomingInvoices;
 
-// Connect to your accounting system
-$dataProvider = new AbraFlexiDataProvider(
-    'https://your-abraflexi.com',
-    'username', 
-    'password'
-);
+// Use any DataProviderInterface implementation (e.g. AbraFlexiDataProvider)
+$provider = new \AbraFlexi\Digest\Providers\AbraFlexiDataProvider($config);
 
-// Run analytics modules
-$runner = new ModuleRunner($dataProvider);
+$runner = new ModuleRunner($provider);
+$runner->addModule('outcoming_invoices', new OutcomingInvoices());
+$runner->addModule('debtors', new Debtors());
 
-// Get invoice analysis as JSON
-$invoiceData = $runner->runModule('outcoming_invoices');
-echo json_encode($invoiceData, JSON_PRETTY_PRINT);
-
-// Get debtor analysis  
-$debtorData = $runner->runModule('debtors');
-echo json_encode($debtorData, JSON_PRETTY_PRINT);
-```
-
-### Expected JSON Output
-
-```json
-{
-    "module": "outcoming_invoices",
-    "heading": "Outcoming Invoices Analysis",
-    "summary": {
-        "total_amount": 125000.50,
-        "currency": "CZK", 
-        "count": 45,
-        "processing_time": 0.234
-    },
-    "details": [
-        {
-            "customer": "ACME Corp",
-            "amount": 25000.00,
-            "date": "2024-12-15",
-            "status": "paid"
-        }
-    ],
-    "metadata": {
-        "generated_at": "2024-12-23T10:30:45+01:00",
-        "provider": "AbraFlexiDataProvider", 
-        "system_version": "2023.1"
-    }
-}
-```
-
-// Create module runner
-$runner = new ModuleRunner($dataProvider);
-
-// Add modules
-$runner->addModule('outcoming_invoices', \VitexSoftware\DigestModules\Modules\OutcomingInvoices::class);
-$runner->addModule('debtors', \VitexSoftware\DigestModules\Modules\Debtors::class);
-
-// Process data for a time period
 $period = new \DatePeriod(
-    new \DateTime('2024-01-01'),
+    new \DateTime('first day of last month'),
     new \DateInterval('P1M'),
-    new \DateTime('2024-02-01')
+    new \DateTime('first day of this month'),
 );
 
-$results = $runner->run($period);
-
-// Get JSON output
-echo json_encode($results, JSON_PRETTY_PRINT);
-```
-
-## Module Structure
-
-Each module returns structured data in this format:
-
-```php
-[
-    'module_name' => 'outcoming_invoices',
-    'heading' => 'Outcoming Invoices',
-    'period' => [
-        'start' => '2024-01-01',
-        'end' => '2024-02-01'
-    ],
-    'success' => true,
-    'data' => [
-        'summary' => [
-            'total_count' => 150,
-            'total_amount' => 250000.50,
-            'currency' => 'CZK'
-        ],
-        'by_type' => [...],
-        'details' => [...]
-    ],
-    'metadata' => [
-        'processing_time' => 0.123,
-        'timestamp' => '2024-01-15T10:30:00Z'
-    ]
-]
+$result = $runner->run($period);
+echo json_encode($result, JSON_PRETTY_PRINT);
 ```
 
 ## Available Modules
 
-- **OutcomingInvoices**: Analyzes issued invoices
-- **IncomingInvoices**: Analyzes received invoices
-- **Debtors**: Tracks unpaid invoices and overdue amounts
-- **NewCustomers**: Identifies new customers in period
-- **BestSellers**: Top-selling products/services
-- **WaitingPayments**: Outstanding payments
+| Module class | Key | Description |
+|---|---|---|
+| `OutcomingInvoices` | `outcoming_invoices` | Issued invoices in the period |
+| `IncomingInvoices` | `incoming_invoices` | Received invoices in the period |
+| `IncomingPayments` | `incoming_payments` | Bank receipts in the period |
+| `OutcomingPayments` | `outcoming_payments` | Bank outflows in the period |
+| `Debtors` | `debtors` | All overdue unpaid receivables |
+| `UnmatchedInvoices` | `unmatched_invoices` | Issued invoices not matched to a payment |
+| `UnmatchedPayments` | `unmatched_payments` | Bank movements not matched to an invoice |
+| `WaitingIncome` | `waiting_income` | Proforma invoices awaiting settlement |
+| `WaitingPayments` | `waiting_payments` | Invoices awaiting payment |
+| `NewCustomers` | `new_customers` | Contacts created in the period |
+| `Reminds` | `reminds` | Invoices with pending payment reminders |
+| `BestSellers` | `best_sellers` | Top products/services sold in the period |
+| `WithoutEmail` | `without_email` | Contacts missing an email address |
+| `WithoutTel` | `without_tel` | Contacts missing a phone number |
+| `AllTime\PurchasePriceLowerThanSales` | `purchase_price_lower_than_sales` | Products sold below purchase price |
+
+## Module Output Format
+
+Every module returns an array from `AbstractModule::createResult()`:
+
+```php
+[
+    'module_name' => 'outcoming_invoices',
+    'heading'     => 'Outcoming Invoices',
+    'description' => '...',
+    'period' => [
+        'start' => '2024-01-01',
+        'end'   => '2024-02-01',
+    ],
+    'success'  => true,
+    'data'     => [/* module-specific */],
+    'metadata' => [
+        'timestamp' => '2024-01-15T10:30:00+01:00',
+        'provider'  => 'abraflexi',
+    ],
+]
+```
 
 ## Data Providers
 
-- **AbraFlexiDataProvider**: For AbraFlexi accounting system
-- **PohodaDataProvider**: For Pohoda accounting system (planned)
-- **MoneyS3DataProvider**: For Money S3 accounting system (planned)
+This package defines only the interface. Concrete providers live in their own packages:
+
+| Provider | Package |
+|---|---|
+| `AbraFlexiDataProvider` | `vitexsoftware/abraflexi-digest` |
+| `PohodaDataProvider` | `vitexsoftware/pohoda-digest` (planned) |
 
 ## Extending
 
-Create custom modules by implementing `ModuleInterface`:
+### Create a custom module
 
 ```php
-class CustomModule implements ModuleInterface
+<?php declare(strict_types=1);
+
+namespace YourApp\Analytics;
+
+use VitexSoftware\DigestModules\Core\AbstractModule;
+use VitexSoftware\DigestModules\Core\DataProviderInterface;
+
+class PaidThisWeek extends AbstractModule
 {
+    protected string $moduleName = 'paid_this_week';
+    protected string $heading    = 'Paid This Week';
+
     public function process(DataProviderInterface $provider, \DatePeriod $period): array
     {
-        // Your data collection logic
-        return [
-            'module_name' => 'custom_module',
-            'heading' => 'Custom Analysis',
-            'success' => true,
-            'data' => $analyzedData
-        ];
+        $invoices = $provider->getData(
+            DataProviderInterface::ENTITY_OUTCOMING_INVOICES,
+            [
+                DataProviderInterface::FILTER_DATE_PERIOD     => [
+                    'column' => DataProviderInterface::DATE_COLUMN_ISSUE_DATE,
+                    'period' => $period,
+                ],
+                DataProviderInterface::FILTER_PAYMENT_STATUS  => DataProviderInterface::PAYMENT_STATUS_PAID,
+                DataProviderInterface::FILTER_CANCELLED       => false,
+                DataProviderInterface::FILTER_LIMIT           => 0,
+            ],
+        );
+
+        $total = array_sum(array_column($invoices, DataProviderInterface::FIELD_TOTAL_AMOUNT));
+
+        return $this->createResult($period, true, [
+            'summary' => [
+                'count'        => count($invoices),
+                'total_amount' => $this->formatCurrency($total),
+            ],
+        ]);
     }
+}
+```
+
+### Create a custom data provider
+
+Implement `DataProviderInterface::getData()` — translate neutral `FILTER_*` conditions to system-specific queries, and return records keyed with `FIELD_*` constants:
+
+```php
+<?php declare(strict_types=1);
+
+use VitexSoftware\DigestModules\Core\DataProviderInterface;
+
+class MySystemDataProvider implements DataProviderInterface
+{
+    public function getData(string $entity, array $conditions = [], array $columns = []): array
+    {
+        // 1. Map ENTITY_* → your system's endpoint
+        // 2. Map FILTER_* conditions → your query format
+        // 3. Return records with FIELD_* keys
+
+        return array_map(fn($raw) => [
+            DataProviderInterface::FIELD_CODE         => $raw['number'],
+            DataProviderInterface::FIELD_COMPANY      => $raw['client_name'],
+            DataProviderInterface::FIELD_TOTAL_AMOUNT => (float) $raw['total'],
+            DataProviderInterface::FIELD_CURRENCY     => $raw['currency'] ?? 'CZK',
+            DataProviderInterface::FIELD_CANCELLED    => (bool) $raw['cancelled'],
+            // ... other FIELD_* constants
+        ], $this->fetchFromMySystem($entity, $conditions));
+    }
+
+    public function getSystemName(): string { return 'my_system'; }
+    // ... implement remaining interface methods
 }
 ```
 

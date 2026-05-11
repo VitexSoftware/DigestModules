@@ -1,101 +1,128 @@
-# Development Guide - Creating Custom Modules
+# Development Guide — DigestModules
 
-## Quick Start Guide
+## Architecture
 
-### 1. Create a Custom Module
+```
+vitexsoftware/digest-modules          ← this package
+  Core/DataProviderInterface.php      — neutral constants + contract
+  Core/AbstractModule.php             — base class with helpers
+  Core/ModuleInterface.php            — interface all modules implement
+  Core/ModuleRunner.php               — orchestrates module execution
+  Modules/*.php                       — ready-made analytics modules
+
+vitexsoftware/abraflexi-digest        ← separate package
+  Providers/AbraFlexiDataProvider.php — translates neutral schema → AbraFlexi WQL
+
+vitexsoftware/pohoda-digest           ← separate package (planned)
+  DataProvider/PohodaDataProvider.php — translates neutral schema → Pohoda API
+```
+
+The key rule: **this package must contain no AbraFlexi or Pohoda code**. Modules may only reference `DataProviderInterface::FILTER_*`, `FIELD_*`, `ENTITY_*`, and value constants.
+
+---
+
+## Writing a new module
+
+### 1. Extend AbstractModule
 
 ```php
 <?php declare(strict_types=1);
 
-namespace YourApp\Analytics;
+namespace VitexSoftware\DigestModules\Modules;
 
 use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
 
-class CustomSalesModule extends AbstractModule
+class PaidInvoices extends AbstractModule
 {
-    protected string $moduleName = 'custom_sales';
-    protected string $heading = 'Sales Performance Analysis';
+    protected string $moduleName     = 'paid_invoices';
+    protected string $heading        = 'Paid Invoices';
+    protected string $description    = 'Invoices fully paid within the period';
+    protected array  $requiredFeatures = ['date_filtering', 'payment_status'];
 
-    public function process(DataProviderInterface $provider): array
+    public function process(DataProviderInterface $provider, \DatePeriod $period): array
     {
-        // Validate provider supports required data
-        $this->validateProvider($provider);
-        
-        // Get data from accounting system
-        $invoices = $provider->getInvoices();
-        $customers = $provider->getCustomers();
-        
-        // Perform your analytics
-        $analysis = $this->analyzeSalesData($invoices, $customers);
-        
-        // Return standardized format
-        return [
-            'summary' => [
-                'total_sales' => $analysis['total'],
-                'customer_count' => count($customers),
-                'average_order' => $analysis['average'],
-                'processing_time' => $this->getProcessingTime()
-            ],
-            'details' => $analysis['breakdown'],
-            'metadata' => $this->getMetadata()
-        ];
-    }
+        try {
+            $invoices = $provider->getData(
+                DataProviderInterface::ENTITY_OUTCOMING_INVOICES,
+                [
+                    DataProviderInterface::FILTER_DATE_PERIOD    => [
+                        'column' => DataProviderInterface::DATE_COLUMN_ISSUE_DATE,
+                        'period' => $period,
+                    ],
+                    DataProviderInterface::FILTER_PAYMENT_STATUS => DataProviderInterface::PAYMENT_STATUS_PAID,
+                    DataProviderInterface::FILTER_CANCELLED       => false,
+                    DataProviderInterface::FILTER_LIMIT           => 0,
+                ],
+            );
 
-    protected function validateProvider(DataProviderInterface $provider): void
-    {
-        if (!$provider->isAvailable()) {
-            throw new \RuntimeException('Accounting system is not available');
-        }
-        
-        // Add any specific validation your module needs
-        if (!method_exists($provider, 'getInvoices')) {
-            throw new \InvalidArgumentException('Provider must support invoice data');
+            if (empty($invoices)) {
+                return $this->createResult($period, true, [
+                    'summary' => ['count' => 0, 'message' => 'No paid invoices found'],
+                ]);
+            }
+
+            return $this->createResult($period, true, $this->analyze($invoices));
+
+        } catch (\Throwable $e) {
+            return $this->createResult($period, false, [], [
+                'error' => ['message' => $e->getMessage(), 'type' => get_class($e)],
+            ]);
         }
     }
 
-    private function analyzeSalesData(array $invoices, array $customers): array
+    /** @param array<array<string, mixed>> $invoices */
+    private function analyze(array $invoices): array
     {
-        $total = 0;
-        $breakdown = [];
-        
+        $totalsByCurrency = [];
+
         foreach ($invoices as $invoice) {
-            $total += $invoice['amount'];
-            
-            $breakdown[] = [
-                'invoice_id' => $invoice['id'],
-                'customer' => $invoice['customer_name'],
-                'amount' => $invoice['amount'],
-                'date' => $invoice['date']
-            ];
+            $currency = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+            $amount   = $currency !== 'CZK'
+                ? (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
+                : (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
+
+            $totalsByCurrency[$currency] = ($totalsByCurrency[$currency] ?? 0.0) + $amount;
         }
-        
+
+        $formattedTotals = [];
+        foreach ($totalsByCurrency as $currency => $total) {
+            $formattedTotals[$currency] = $this->formatCurrency($total, $currency);
+        }
+
         return [
-            'total' => $total,
-            'average' => count($invoices) > 0 ? $total / count($invoices) : 0,
-            'breakdown' => $breakdown
+            'summary' => ['count' => count($invoices), 'currencies' => array_keys($totalsByCurrency)],
+            'totals_by_currency' => $formattedTotals,
         ];
     }
 }
 ```
 
-### 2. Register Your Module
+### 2. Rules for module code
+
+- Only use `DataProviderInterface::FILTER_*` in conditions — never pass raw WQL, SQL, or system-specific strings.
+- Only read `DataProviderInterface::FIELD_*` keys from returned records — never assume `kod`, `firma`, `datVyst`, etc.
+- Wrap the entire `process()` body in `try/catch (\Throwable $e)` and return `createResult(..., false, ...)` on error.
+- Use `$this->formatCurrency()` for monetary values so the output schema is consistent.
+- Use `foreach` (not `array_map` with two arrays) when building associative results — `array_map` loses string keys.
+
+### 3. Register and run
 
 ```php
-<?php
-use VitexSoftware\DigestModules\Core\ModuleRunner;
-use YourApp\Analytics\CustomSalesModule;
+$runner = new ModuleRunner($provider);
+$runner->addModule('paid_invoices', new PaidInvoices());
 
-$runner = new ModuleRunner($dataProvider);
-
-// Register your custom module
-$runner->registerModule(new CustomSalesModule());
-
-// Now you can use it
-$salesData = $runner->runModule('custom_sales');
+$result = $runner->run($period);
 ```
 
-### 3. Create a Custom Data Provider
+---
+
+## Writing a new data provider
+
+Implement `DataProviderInterface`. The two most important obligations:
+
+1. **Translate `FILTER_*` conditions** to your system's query format.
+2. **Return records keyed with `FIELD_*` constants** — modules must not know your system's internal field names.
 
 ```php
 <?php declare(strict_types=1);
@@ -104,317 +131,166 @@ namespace YourApp\DataProviders;
 
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
 
-class CustomSystemDataProvider implements DataProviderInterface
+class MySystemDataProvider implements DataProviderInterface
 {
-    private string $apiUrl;
-    private string $apiKey;
-    private ?\PDO $connection = null;
-
-    public function __construct(string $apiUrl, string $apiKey)
+    public function getData(string $entity, array $conditions = [], array $columns = []): array
     {
-        $this->apiUrl = rtrim($apiUrl, '/');
-        $this->apiKey = $apiKey;
+        $query = $this->buildQuery($entity, $conditions);
+        $raw   = $this->executeQuery($query);
+
+        return array_map([$this, 'normalizeRecord'], $raw);
     }
 
-    public function isAvailable(): bool
+    private function buildQuery(string $entity, array $conditions): array
     {
-        try {
-            $response = $this->makeApiCall('/health');
-            return $response['status'] === 'ok';
-        } catch (\Exception $e) {
-            return false;
+        $q = ['entity' => $this->entityMap[$entity]];
+
+        foreach ($conditions as $key => $value) {
+            switch ($key) {
+                case DataProviderInterface::FILTER_DATE_PERIOD:
+                    $col   = $this->dateColumnMap[$value['column']] ?? 'created_at';
+                    $start = $value['period']->getStartDate()->format('Y-m-d');
+                    $end   = $value['period']->getEndDate()->format('Y-m-d');
+                    $q['where'][] = "$col >= '$start' AND $col < '$end'";
+                    break;
+
+                case DataProviderInterface::FILTER_PAYMENT_STATUS:
+                    if ($value === DataProviderInterface::PAYMENT_STATUS_UNPAID_OR_PARTIAL) {
+                        $q['where'][] = "payment_status IN ('unpaid','partial')";
+                    }
+                    break;
+
+                case DataProviderInterface::FILTER_CANCELLED:
+                    $q['where'][] = 'cancelled = ' . ($value ? '1' : '0');
+                    break;
+
+                case DataProviderInterface::FILTER_LIMIT:
+                    if ($value > 0) {
+                        $q['limit'] = (int) $value;
+                    }
+                    break;
+            }
         }
+
+        return $q;
     }
 
-    public function getInvoices(): array
-    {
-        $response = $this->makeApiCall('/invoices');
-        
-        // Normalize data to standard format
-        return array_map([$this, 'normalizeInvoice'], $response['data']);
-    }
-
-    public function getCustomers(): array
-    {
-        $response = $this->makeApiCall('/customers');
-        
-        return array_map([$this, 'normalizeCustomer'], $response['data']);
-    }
-
-    public function getSystemInfo(): array
+    private function normalizeRecord(array $raw): array
     {
         return [
-            'system' => 'Custom Accounting System',
-            'version' => $this->getSystemVersion(),
-            'provider' => static::class,
-            'api_url' => $this->apiUrl
+            DataProviderInterface::FIELD_CODE         => $raw['invoice_no'],
+            DataProviderInterface::FIELD_COMPANY      => $raw['client_name'],
+            DataProviderInterface::FIELD_DATE         => $raw['issue_date'],
+            DataProviderInterface::FIELD_DUE_DATE     => $raw['due_date'],
+            DataProviderInterface::FIELD_TOTAL_AMOUNT => (float) $raw['total'],
+            DataProviderInterface::FIELD_CURRENCY     => $raw['currency'] ?? 'CZK',
+            DataProviderInterface::FIELD_CANCELLED    => (bool) ($raw['cancelled'] ?? false),
+            DataProviderInterface::FIELD_PAYMENT_STATUS => $this->normalizePaymentStatus($raw['status']),
         ];
     }
 
-    private function makeApiCall(string $endpoint): array
+    private function normalizePaymentStatus(string $raw): string
     {
-        $url = $this->apiUrl . $endpoint;
-        
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'header' => [
-                    'Authorization: Bearer ' . $this->apiKey,
-                    'Accept: application/json'
-                ]
-            ]
-        ]);
-        
-        $response = file_get_contents($url, false, $context);
-        
-        if ($response === false) {
-            throw new \RuntimeException("Failed to fetch data from $endpoint");
-        }
-        
-        return json_decode($response, true);
+        return match ($raw) {
+            'PAID'    => DataProviderInterface::PAYMENT_STATUS_PAID,
+            'PARTIAL' => DataProviderInterface::PAYMENT_STATUS_PARTIAL,
+            default   => DataProviderInterface::PAYMENT_STATUS_UNPAID,
+        };
     }
 
-    private function normalizeInvoice(array $rawInvoice): array
-    {
-        return [
-            'id' => $rawInvoice['invoice_id'],
-            'number' => $rawInvoice['invoice_number'],
-            'customer_name' => $rawInvoice['client_name'],
-            'amount' => (float) $rawInvoice['total_amount'],
-            'currency' => $rawInvoice['currency'] ?? 'USD',
-            'date' => $rawInvoice['invoice_date'],
-            'due_date' => $rawInvoice['due_date'],
-            'status' => $this->normalizeStatus($rawInvoice['status'])
-        ];
-    }
+    public function getSystemName(): string          { return 'my_system'; }
+    public function getSupportedEntities(): array    { return array_keys($this->entityMap); }
+    public function supportsFeature(string $f): bool { return in_array($f, $this->features, true); }
+    public function getCompanyInfo(): array          { return ['name' => $this->fetchCompanyName()]; }
+    public function formatDate(\DateTime $d): string { return $d->format('Y-m-d'); }
 
-    private function normalizeCustomer(array $rawCustomer): array
+    public function formatDatePeriod(string $column, \DatePeriod $period): string
     {
-        return [
-            'id' => $rawCustomer['customer_id'],
-            'name' => $rawCustomer['company_name'],
-            'email' => $rawCustomer['contact_email'],
-            'phone' => $rawCustomer['phone_number'] ?? null
-        ];
-    }
-
-    private function normalizeStatus(string $rawStatus): string
-    {
-        $statusMap = [
-            'PAID' => 'paid',
-            'UNPAID' => 'unpaid', 
-            'OVERDUE' => 'overdue',
-            'CANCELLED' => 'cancelled'
-        ];
-        
-        return $statusMap[$rawStatus] ?? 'unknown';
-    }
-
-    private function getSystemVersion(): string
-    {
-        try {
-            $response = $this->makeApiCall('/version');
-            return $response['version'] ?? 'unknown';
-        } catch (\Exception $e) {
-            return 'unknown';
-        }
+        $col   = $this->dateColumnMap[$column] ?? $column;
+        $start = $period->getStartDate()->format('Y-m-d');
+        $end   = $period->getEndDate()->format('Y-m-d');
+        return "$col >= '$start' AND $col < '$end'";
     }
 }
 ```
 
-## Best Practices
+---
 
-### 1. Error Handling
+## Testing
 
-Always handle errors gracefully and provide meaningful error information:
-
-```php
-public function process(DataProviderInterface $provider): array
-{
-    try {
-        $this->validateProvider($provider);
-        $data = $provider->getInvoices();
-        
-        if (empty($data)) {
-            return $this->createEmptyResult('No invoices found');
-        }
-        
-        return $this->processData($data);
-        
-    } catch (\Exception $e) {
-        return $this->createErrorResult($e);
-    }
-}
-
-private function createEmptyResult(string $message): array
-{
-    return [
-        'summary' => ['count' => 0, 'message' => $message],
-        'details' => [],
-        'metadata' => $this->getMetadata()
-    ];
-}
-
-private function createErrorResult(\Exception $e): array
-{
-    return [
-        'error' => [
-            'message' => $e->getMessage(),
-            'code' => $e->getCode(),
-            'type' => get_class($e)
-        ],
-        'metadata' => $this->getMetadata()
-    ];
-}
-```
-
-### 2. Performance Optimization
+### Testing a module with a mock provider
 
 ```php
-// Use caching for expensive operations
-private function getCachedData(string $cacheKey, callable $dataFetcher): array
-{
-    if ($this->cache && $this->cache->has($cacheKey)) {
-        return $this->cache->get($cacheKey);
-    }
-    
-    $data = $dataFetcher();
-    
-    if ($this->cache) {
-        $this->cache->set($cacheKey, $data, 3600); // 1 hour
-    }
-    
-    return $data;
-}
+<?php declare(strict_types=1);
 
-// Batch operations when possible
-private function processInvoicesInBatches(array $invoices): array
-{
-    $batchSize = 100;
-    $results = [];
-    
-    foreach (array_chunk($invoices, $batchSize) as $batch) {
-        $batchResults = $this->processBatch($batch);
-        $results = array_merge($results, $batchResults);
-    }
-    
-    return $results;
-}
-```
-
-### 3. Testing Your Module
-
-```php
-<?php
 use PHPUnit\Framework\TestCase;
-use YourApp\Analytics\CustomSalesModule;
+use VitexSoftware\DigestModules\Core\DataProviderInterface;
+use VitexSoftware\DigestModules\Modules\PaidInvoices;
 
-class CustomSalesModuleTest extends TestCase
+class PaidInvoicesTest extends TestCase
 {
-    private $mockProvider;
-    private $module;
-
-    protected function setUp(): void
+    private function makeProvider(array $returnData): DataProviderInterface
     {
-        $this->mockProvider = $this->createMock(DataProviderInterface::class);
-        $this->module = new CustomSalesModule();
+        $mock = $this->createMock(DataProviderInterface::class);
+        $mock->method('getData')->willReturn($returnData);
+        $mock->method('getSystemName')->willReturn('test');
+        $mock->method('supportsFeature')->willReturn(true);
+        return $mock;
     }
 
-    public function testProcessReturnsValidFormat(): void
+    private function makePeriod(): \DatePeriod
     {
-        // Arrange
-        $mockInvoices = [
-            ['id' => 1, 'amount' => 1000, 'customer_name' => 'Test Corp'],
-            ['id' => 2, 'amount' => 2000, 'customer_name' => 'Demo Ltd']
+        return new \DatePeriod(
+            new \DateTime('2024-01-01'),
+            new \DateInterval('P1M'),
+            new \DateTime('2024-02-01'),
+        );
+    }
+
+    public function testCountsInvoices(): void
+    {
+        $invoices = [
+            [
+                DataProviderInterface::FIELD_CURRENCY     => 'CZK',
+                DataProviderInterface::FIELD_TOTAL_AMOUNT => 1000.0,
+                DataProviderInterface::FIELD_CANCELLED    => false,
+            ],
+            [
+                DataProviderInterface::FIELD_CURRENCY     => 'CZK',
+                DataProviderInterface::FIELD_TOTAL_AMOUNT => 2000.0,
+                DataProviderInterface::FIELD_CANCELLED    => false,
+            ],
         ];
-        
-        $this->mockProvider->method('isAvailable')->willReturn(true);
-        $this->mockProvider->method('getInvoices')->willReturn($mockInvoices);
-        $this->mockProvider->method('getCustomers')->willReturn([]);
 
-        // Act
-        $result = $this->module->process($this->mockProvider);
+        $result = (new PaidInvoices())->process($this->makeProvider($invoices), $this->makePeriod());
 
-        // Assert
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('summary', $result);
-        $this->assertArrayHasKey('details', $result);
-        $this->assertArrayHasKey('metadata', $result);
-        $this->assertEquals(3000, $result['summary']['total_sales']);
+        $this->assertTrue($result['success']);
+        $this->assertSame(2, $result['data']['summary']['count']);
+        $this->assertSame(3000.0, $result['data']['totals_by_currency']['CZK']['amount']);
     }
 
-    public function testHandlesUnavailableProvider(): void
+    public function testEmptyProviderReturnsSuccess(): void
     {
-        // Arrange
-        $this->mockProvider->method('isAvailable')->willReturn(false);
+        $result = (new PaidInvoices())->process($this->makeProvider([]), $this->makePeriod());
 
-        // Act & Assert
-        $this->expectException(\RuntimeException::class);
-        $this->module->process($this->mockProvider);
+        $this->assertTrue($result['success']);
+        $this->assertSame(0, $result['data']['summary']['count']);
+    }
+
+    public function testProviderExceptionReturnsFailed(): void
+    {
+        $mock = $this->createMock(DataProviderInterface::class);
+        $mock->method('getData')->willThrowException(new \RuntimeException('timeout'));
+        $mock->method('supportsFeature')->willReturn(true);
+
+        $result = (new PaidInvoices())->process($mock, $this->makePeriod());
+
+        $this->assertFalse($result['success']);
+        $this->assertSame('timeout', $result['metadata']['error']['message']);
     }
 }
 ```
 
-## Integration Examples
+### Testing a data provider
 
-### With Caching
-
-```php
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
-
-$cache = new FilesystemAdapter();
-$dataProvider = new CachedDataProvider($realProvider, $cache);
-$runner = new ModuleRunner($dataProvider);
-```
-
-### With Multiple Providers
-
-```php
-$providers = [
-    'abraflexi' => new AbraFlexiDataProvider($config1),
-    'pohoda' => new PohodaDataProvider($config2),
-    'custom' => new CustomSystemDataProvider($config3)
-];
-
-$allResults = [];
-foreach ($providers as $name => $provider) {
-    if ($provider->isAvailable()) {
-        $runner = new ModuleRunner($provider);
-        $allResults[$name] = $runner->runModule('outcoming_invoices');
-    }
-}
-```
-
-### With Error Aggregation
-
-```php
-$modules = ['outcoming_invoices', 'debtors', 'custom_sales'];
-$results = [];
-$errors = [];
-
-foreach ($modules as $moduleName) {
-    try {
-        $result = $runner->runModule($moduleName);
-        
-        if (isset($result['error'])) {
-            $errors[$moduleName] = $result['error'];
-        } else {
-            $results[$moduleName] = $result;
-        }
-    } catch (\Exception $e) {
-        $errors[$moduleName] = [
-            'message' => $e->getMessage(),
-            'type' => get_class($e)
-        ];
-    }
-}
-
-// Generate summary report
-$summary = [
-    'successful_modules' => count($results),
-    'failed_modules' => count($errors),
-    'total_modules' => count($modules),
-    'results' => $results,
-    'errors' => $errors
-];
-```
+Test normalization of raw system records into neutral schema. Because most providers call live APIs, mock the HTTP/connection layer and assert that `FIELD_*` keys are present and correctly typed in the output.
