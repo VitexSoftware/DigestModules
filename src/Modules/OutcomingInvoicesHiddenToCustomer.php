@@ -43,7 +43,7 @@ class OutcomingInvoicesHiddenToCustomer extends AbstractModule
                 DataProviderInterface::ENTITY_OUTCOMING_INVOICES,
                 [
                     'date_period' => ['column' => 'datVyst', 'period' => $period],
-                    "((stavMailK eq 'stavMail.odeslat') OR (stavMailK is empty))",
+                    "((stavMailK eq 'stavMail.odeslat') OR (stavMailK is null))",
                     'storno' => false,
                     'limit' => 0,
                 ],

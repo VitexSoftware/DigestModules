@@ -233,9 +233,13 @@ class AbraFlexiDataProvider implements DataProviderInterface
                     $condition = $this->formatDatePeriod($value['column'], $value['period']);
                     $abraFlexiConditions[] = $condition;
                 }
-            } elseif (is_string($value)) {
+            } elseif ($key === 'relations') {
+                $abraFlexiConditions['relations'] = $value;
+            } elseif (is_int($key) && is_string($value)) {
+                // Numeric-keyed string: raw WQL passed as-is
                 $abraFlexiConditions[] = $value;
             } else {
+                // Named key: preserve for AbraFlexi library to convert to WQL
                 $abraFlexiConditions[$key] = $value;
             }
         }
