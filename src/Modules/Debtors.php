@@ -133,17 +133,19 @@ class Debtors extends AbstractModule
             return $totalB <=> $totalA;
         });
 
+        $formattedTotals = [];
+
+        foreach ($totalsByCurrency as $currency => $amount) {
+            $formattedTotals[$currency] = $this->formatCurrency($amount, $currency);
+        }
+
         return [
             'summary' => [
                 'total_debtors'  => count($debtorsByCompany),
                 'total_invoices' => count($unpaidInvoices),
                 'currencies'     => array_keys($totalsByCurrency),
             ],
-            'totals_by_currency' => array_map(
-                fn ($amount, $currency) => $this->formatCurrency($amount, $currency),
-                $totalsByCurrency,
-                array_keys($totalsByCurrency),
-            ),
+            'totals_by_currency' => $formattedTotals,
             'overdue_ranges' => $overdueRanges,
             'top_debtors'    => array_slice($debtorsByCompany, 0, 20, true),
             'all_debtors'    => $debtorsByCompany,
