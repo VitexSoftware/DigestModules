@@ -41,7 +41,7 @@ class WithoutEmail extends AbstractModule
             $contacts = $provider->getData(
                 DataProviderInterface::ENTITY_CONTACTS,
                 [
-                    "(email is null OR email eq '')",
+                    'email' => 'is empty',
                     "(typVztahuK='typVztahu.odberDodav' OR typVztahuK='typVztahu.odberatel')",
                     'limit' => 0,
                 ],

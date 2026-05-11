@@ -62,7 +62,7 @@ class Debtors extends AbstractModule
             ];
 
             $columns = [
-                'kod', 'firma', 'sumCelkem', 'typDokl',
+                'kod', 'firma', 'sumCelkem', 'typDokl(typDoklK)',
                 'sumCelkemMen', 'zbyvaUhradit', 'zbyvaUhraditMen', 'mena', 'datSplat'
             ];
 
