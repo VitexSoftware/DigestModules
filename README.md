@@ -177,4 +177,4 @@ class CustomModule implements ModuleInterface
 
 ## License
 
-GPL-2.0-or-later
+MIT

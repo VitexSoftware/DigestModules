@@ -21,10 +21,26 @@ namespace VitexSoftware\DigestModules\Core;
  * Data providers abstract the connection to different accounting systems
  * like AbraFlexi, Pohoda, Money S3, etc.
  *
+ * Standardized entity names used across all providers:
+ * - ENTITY_OUTCOMING_INVOICES — issued/outgoing invoices
+ * - ENTITY_INCOMING_INVOICES — received/incoming invoices
+ * - ENTITY_BANK_STATEMENTS — bank transactions (payments in/out)
+ * - ENTITY_CONTACTS — address book / customers / suppliers
+ * - ENTITY_PRODUCTS — product catalog / price list
+ * - ENTITY_REMINDERS — payment reminders sent
+ * - ENTITY_ORDERS — received orders
+ *
  * @author Vítězslav Dvořák <info@vitexsoftware.cz>
  */
 interface DataProviderInterface
 {
+    public const ENTITY_OUTCOMING_INVOICES = 'outcoming_invoices';
+    public const ENTITY_INCOMING_INVOICES = 'incoming_invoices';
+    public const ENTITY_BANK_STATEMENTS = 'bank_statements';
+    public const ENTITY_CONTACTS = 'contacts';
+    public const ENTITY_PRODUCTS = 'products';
+    public const ENTITY_REMINDERS = 'reminders';
+    public const ENTITY_ORDERS = 'orders';
     /**
      * Get data from the accounting system
      *

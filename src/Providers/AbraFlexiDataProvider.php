@@ -39,13 +39,16 @@ class AbraFlexiDataProvider implements DataProviderInterface
      * @var array<string, string>
      */
     private array $entityMapping = [
-        'outcoming_invoices' => 'faktura-vydana',
-        'incoming_invoices' => 'faktura-prijata',
+        DataProviderInterface::ENTITY_OUTCOMING_INVOICES => 'faktura-vydana',
+        DataProviderInterface::ENTITY_INCOMING_INVOICES => 'faktura-prijata',
+        DataProviderInterface::ENTITY_BANK_STATEMENTS => 'banka',
+        DataProviderInterface::ENTITY_CONTACTS => 'adresar',
+        DataProviderInterface::ENTITY_PRODUCTS => 'cenik',
+        DataProviderInterface::ENTITY_REMINDERS => 'faktura-vydana',
+        DataProviderInterface::ENTITY_ORDERS => 'objednavka-prijata',
+        // Legacy aliases
         'customers' => 'adresar',
         'payments' => 'banka',
-        'products' => 'cenik',
-        'contacts' => 'adresar',
-        'orders' => 'objednavka-prijata',
     ];
 
     /**
