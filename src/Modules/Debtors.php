@@ -227,14 +227,14 @@ class Debtors extends AbstractModule
      * @param string $dateSplat Due date
      * @return int Days overdue (0 if not overdue)
      */
-    private function calculateOverdueDays(string $dateSplat): int
+    private function calculateOverdueDays(mixed $dateSplat): int
     {
         if (empty($dateSplat)) {
             return 0;
         }
 
         try {
-            $dueDate = new \DateTime($dateSplat);
+            $dueDate = ($dateSplat instanceof \DateTime) ? $dateSplat : new \DateTime((string) $dateSplat);
             $today = new \DateTime();
             $diff = $today->diff($dueDate);
             
