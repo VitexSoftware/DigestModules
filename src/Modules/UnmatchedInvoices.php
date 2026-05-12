@@ -19,7 +19,7 @@ use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
 
 /**
- * Non-deducted proforma invoices analysis module
+ * Non-deducted proforma invoices analysis module.
  *
  * Identifies paid proforma invoices that have not yet been
  * fully deducted (tax document not created).
@@ -46,17 +46,17 @@ class UnmatchedInvoices extends AbstractModule
                         'column' => DataProviderInterface::DATE_COLUMN_ISSUE_DATE,
                         'period' => $period,
                     ],
-                    DataProviderInterface::FILTER_CANCELLED      => false,
-                    DataProviderInterface::FILTER_ACCOUNTED      => false,
-                    DataProviderInterface::FILTER_DOCUMENT_TYPE  => DataProviderInterface::DOCUMENT_TYPE_PROFORMA,
+                    DataProviderInterface::FILTER_CANCELLED => false,
+                    DataProviderInterface::FILTER_ACCOUNTED => false,
+                    DataProviderInterface::FILTER_DOCUMENT_TYPE => DataProviderInterface::DOCUMENT_TYPE_PROFORMA,
                     DataProviderInterface::FILTER_PAYMENT_STATUS => DataProviderInterface::PAYMENT_STATUS_PAID,
-                    DataProviderInterface::FILTER_LIMIT          => 0,
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
             );
 
-            $totalsByCurrency  = [];
-            $countsByCurrency  = [];
-            $invoiceList       = [];
+            $totalsByCurrency = [];
+            $countsByCurrency = [];
+            $invoiceList = [];
 
             foreach ($proformas as $proforma) {
                 $deductionStatus = (string) ($proforma[DataProviderInterface::FIELD_DEDUCTION_STATUS] ?? '');
@@ -70,21 +70,21 @@ class UnmatchedInvoices extends AbstractModule
                 }
 
                 $currency = (string) ($proforma[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
-                $amount   = $currency !== 'CZK'
+                $amount = $currency !== 'CZK'
                     ? (float) ($proforma[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
                     : (float) ($proforma[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
 
-                $totalsByCurrency[$currency]  = ($totalsByCurrency[$currency] ?? 0.0) + $amount;
-                $countsByCurrency[$currency]  = ($countsByCurrency[$currency] ?? 0) + 1;
+                $totalsByCurrency[$currency] = ($totalsByCurrency[$currency] ?? 0.0) + $amount;
+                $countsByCurrency[$currency] = ($countsByCurrency[$currency] ?? 0) + 1;
 
                 $invoiceList[] = [
-                    'code'             => $proforma[DataProviderInterface::FIELD_CODE] ?? '',
-                    'description'      => $proforma[DataProviderInterface::FIELD_DESCRIPTION] ?? '',
+                    'code' => $proforma[DataProviderInterface::FIELD_CODE] ?? '',
+                    'description' => $proforma[DataProviderInterface::FIELD_DESCRIPTION] ?? '',
                     'deduction_status' => $deductionStatus,
-                    'document_type'    => $proforma[DataProviderInterface::FIELD_DOCUMENT_TYPE] ?? '',
-                    'company'          => $proforma[DataProviderInterface::FIELD_COMPANY] ?? '',
-                    'date'             => $proforma[DataProviderInterface::FIELD_DATE] ?? '',
-                    'amount'           => $this->formatCurrency($amount, $currency),
+                    'document_type' => $proforma[DataProviderInterface::FIELD_DOCUMENT_TYPE] ?? '',
+                    'company' => $proforma[DataProviderInterface::FIELD_COMPANY] ?? '',
+                    'date' => $proforma[DataProviderInterface::FIELD_DATE] ?? '',
+                    'amount' => $this->formatCurrency($amount, $currency),
                 ];
             }
 
@@ -98,16 +98,16 @@ class UnmatchedInvoices extends AbstractModule
             }
 
             return $this->createResult($period, true, [
-                'summary'            => ['total_count' => \count($invoiceList)],
+                'summary' => ['total_count' => \count($invoiceList)],
                 'totals_by_currency' => $formattedTotals,
-                'invoices'           => $invoiceList,
+                'invoices' => $invoiceList,
             ], [
                 'provider' => $provider->getSystemName(),
             ]);
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

@@ -20,7 +20,7 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
 use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 
 /**
- * New customers analysis module
+ * New customers analysis module.
  *
  * Identifies contacts created or updated within the analyzed period.
  *
@@ -55,15 +55,15 @@ class NewCustomers extends AbstractModule implements ZabbixOutputInterface
             foreach ($contacts as $pos => $contact) {
                 $customerList[] = [
                     'position' => $pos + 1,
-                    'code'     => $contact[DataProviderInterface::FIELD_CODE] ?? '',
-                    'name'     => $contact[DataProviderInterface::FIELD_NAME] ?? '',
-                    'email'    => $contact[DataProviderInterface::FIELD_EMAIL] ?? '',
-                    'phone'    => $contact[DataProviderInterface::FIELD_PHONE] ?? '',
+                    'code' => $contact[DataProviderInterface::FIELD_CODE] ?? '',
+                    'name' => $contact[DataProviderInterface::FIELD_NAME] ?? '',
+                    'email' => $contact[DataProviderInterface::FIELD_EMAIL] ?? '',
+                    'phone' => $contact[DataProviderInterface::FIELD_PHONE] ?? '',
                 ];
             }
 
             return $this->createResult($period, true, [
-                'summary'   => ['total_count' => \count($contacts)],
+                'summary' => ['total_count' => \count($contacts)],
                 'customers' => $customerList,
             ], [
                 'provider' => $provider->getSystemName(),
@@ -71,7 +71,7 @@ class NewCustomers extends AbstractModule implements ZabbixOutputInterface
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

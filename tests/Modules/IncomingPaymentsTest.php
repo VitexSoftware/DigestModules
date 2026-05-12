@@ -2,6 +2,17 @@
 
 declare(strict_types=1);
 
+/**
+ * This file is part of the DigestModules package
+ *
+ * https://github.com/VitexSoftware/DigestModules/
+ *
+ * (c) Vítězslav Dvořák <http://vitexsoftware.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace VitexSoftware\DigestModules\Tests\Modules;
 
 use PHPUnit\Framework\TestCase;
@@ -10,28 +21,9 @@ use VitexSoftware\DigestModules\Modules\IncomingPayments;
 
 class IncomingPaymentsTest extends TestCase
 {
-    private function makePeriod(): \DatePeriod
-    {
-        return new \DatePeriod(
-            new \DateTime('2024-01-01'),
-            new \DateInterval('P1M'),
-            new \DateTime('2024-02-01'),
-        );
-    }
-
-    private function makeProvider(array $returnData): DataProviderInterface
-    {
-        $mock = $this->createMock(DataProviderInterface::class);
-        $mock->method('getData')->willReturn($returnData);
-        $mock->method('getSystemName')->willReturn('test');
-        $mock->method('supportsFeature')->willReturn(true);
-
-        return $mock;
-    }
-
     public function testEmptyResultWhenNoPayments(): void
     {
-        $result = (new IncomingPayments())->process($this->makeProvider([]), $this->makePeriod());
+        $result = (new IncomingPayments())->process($this->makeProvider([]), self::makePeriod());
 
         $this->assertTrue($result['success']);
         $this->assertSame(0, $result['data']['summary']['total_count']);
@@ -42,20 +34,20 @@ class IncomingPaymentsTest extends TestCase
     {
         $payments = [
             [
-                DataProviderInterface::FIELD_CURRENCY     => 'CZK',
+                DataProviderInterface::FIELD_CURRENCY => 'CZK',
                 DataProviderInterface::FIELD_TOTAL_AMOUNT => 5000.0,
             ],
             [
-                DataProviderInterface::FIELD_CURRENCY     => 'CZK',
+                DataProviderInterface::FIELD_CURRENCY => 'CZK',
                 DataProviderInterface::FIELD_TOTAL_AMOUNT => 3000.0,
             ],
             [
-                DataProviderInterface::FIELD_CURRENCY               => 'EUR',
-                DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN   => 200.0,
+                DataProviderInterface::FIELD_CURRENCY => 'EUR',
+                DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN => 200.0,
             ],
         ];
 
-        $result = (new IncomingPayments())->process($this->makeProvider($payments), $this->makePeriod());
+        $result = (new IncomingPayments())->process($this->makeProvider($payments), self::makePeriod());
 
         $this->assertTrue($result['success']);
         $this->assertSame(3, $result['data']['summary']['total_count']);
@@ -74,8 +66,8 @@ class IncomingPaymentsTest extends TestCase
             [DataProviderInterface::FIELD_CURRENCY => 'GBP', DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN => 50.0],
         ];
 
-        $result   = (new IncomingPayments())->process($this->makeProvider($payments), $this->makePeriod());
-        $totals   = $result['data']['totals_by_currency'];
+        $result = (new IncomingPayments())->process($this->makeProvider($payments), self::makePeriod());
+        $totals = $result['data']['totals_by_currency'];
 
         $this->assertArrayHasKey('USD', $totals, 'USD key must be preserved');
         $this->assertArrayHasKey('GBP', $totals, 'GBP key must be preserved');
@@ -89,8 +81,8 @@ class IncomingPaymentsTest extends TestCase
             [DataProviderInterface::FIELD_CURRENCY => 'CZK', DataProviderInterface::FIELD_TOTAL_AMOUNT => 1234.56],
         ];
 
-        $result = (new IncomingPayments())->process($this->makeProvider($payments), $this->makePeriod());
-        $czk    = $result['data']['totals_by_currency']['CZK'];
+        $result = (new IncomingPayments())->process($this->makeProvider($payments), self::makePeriod());
+        $czk = $result['data']['totals_by_currency']['CZK'];
 
         $this->assertArrayHasKey('amount', $czk);
         $this->assertArrayHasKey('currency', $czk);
@@ -106,8 +98,26 @@ class IncomingPaymentsTest extends TestCase
         $mock->method('getSystemName')->willReturn('test');
         $mock->method('supportsFeature')->willReturn(true);
 
-        $result = (new IncomingPayments())->process($mock, $this->makePeriod());
+        $result = (new IncomingPayments())->process($mock, self::makePeriod());
 
         $this->assertFalse($result['success']);
+    }
+    private static function makePeriod(): \DatePeriod
+    {
+        return new \DatePeriod(
+            new \DateTime('2024-01-01'),
+            new \DateInterval('P1M'),
+            new \DateTime('2024-02-01'),
+        );
+    }
+
+    private function makeProvider(array $returnData): DataProviderInterface
+    {
+        $mock = $this->createMock(DataProviderInterface::class);
+        $mock->method('getData')->willReturn($returnData);
+        $mock->method('getSystemName')->willReturn('test');
+        $mock->method('supportsFeature')->willReturn(true);
+
+        return $mock;
     }
 }

@@ -20,7 +20,7 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
 use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 
 /**
- * Waiting payments analysis module
+ * Waiting payments analysis module.
  *
  * Analyzes unpaid incoming invoices with due date within the period.
  * Reports amounts that the company needs to pay to suppliers.
@@ -48,24 +48,24 @@ class WaitingPayments extends AbstractModule implements ZabbixOutputInterface
                         'period' => $period,
                     ],
                     DataProviderInterface::FILTER_PAYMENT_STATUS => DataProviderInterface::PAYMENT_STATUS_UNPAID_OR_PARTIAL,
-                    DataProviderInterface::FILTER_CANCELLED       => false,
-                    DataProviderInterface::FILTER_LIMIT           => 0,
+                    DataProviderInterface::FILTER_CANCELLED => false,
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
             );
 
             if (empty($invoices)) {
                 return $this->createResult($period, true, [
-                    'summary'            => ['total_count' => 0, 'total_amount' => $this->formatCurrency(0.0)],
+                    'summary' => ['total_count' => 0, 'total_amount' => $this->formatCurrency(0.0)],
                     'totals_by_currency' => [],
-                    'invoices'           => [],
+                    'invoices' => [],
                 ]);
             }
 
             $totalsByCurrency = [];
-            $invoiceList      = [];
+            $invoiceList = [];
 
             foreach ($invoices as $invoice) {
-                $currency  = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+                $currency = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
                 $remaining = $currency !== 'CZK'
                     ? (float) ($invoice[DataProviderInterface::FIELD_REMAINING_AMOUNT_FOREIGN] ?? 0)
                     : (float) ($invoice[DataProviderInterface::FIELD_REMAINING_AMOUNT] ?? $invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
@@ -73,8 +73,8 @@ class WaitingPayments extends AbstractModule implements ZabbixOutputInterface
                 $totalsByCurrency[$currency] = ($totalsByCurrency[$currency] ?? 0.0) + $remaining;
 
                 $invoiceList[] = [
-                    'code'     => $invoice[DataProviderInterface::FIELD_CODE] ?? '',
-                    'company'  => $invoice[DataProviderInterface::FIELD_COMPANY] ?? '',
+                    'code' => $invoice[DataProviderInterface::FIELD_CODE] ?? '',
+                    'company' => $invoice[DataProviderInterface::FIELD_COMPANY] ?? '',
                     'due_date' => $invoice[DataProviderInterface::FIELD_DUE_DATE] ?? '',
                     'remaining' => $this->formatCurrency($remaining, $currency),
                 ];
@@ -90,18 +90,18 @@ class WaitingPayments extends AbstractModule implements ZabbixOutputInterface
 
             return $this->createResult($period, true, [
                 'summary' => [
-                    'total_count'  => \count($invoices),
+                    'total_count' => \count($invoices),
                     'total_amount' => $this->formatCurrency($totalsByCurrency[$mainCurrency] ?? 0.0, $mainCurrency),
                 ],
                 'totals_by_currency' => $formattedTotals,
-                'invoices'           => $invoiceList,
+                'invoices' => $invoiceList,
             ], [
                 'provider' => $provider->getSystemName(),
             ]);
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -111,11 +111,11 @@ class WaitingPayments extends AbstractModule implements ZabbixOutputInterface
      */
     public function toZabbixItems(array $processedData): array
     {
-        $data    = $processedData['data'] ?? [];
+        $data = $processedData['data'] ?? [];
         $summary = $data['summary'] ?? [];
 
         return [
-            'waiting_payments.count'        => $summary['total_count'] ?? 0,
+            'waiting_payments.count' => $summary['total_count'] ?? 0,
             'waiting_payments.total_amount' => $summary['total_amount']['amount'] ?? 0,
         ];
     }

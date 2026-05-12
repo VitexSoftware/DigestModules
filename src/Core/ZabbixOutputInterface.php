@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace VitexSoftware\DigestModules\Core;
 
 /**
- * Interface for modules that can export data as Zabbix metrics
+ * Interface for modules that can export data as Zabbix metrics.
  *
  * Modules implementing this interface can provide key→value pairs
  * suitable for consumption by zabbix_agent2 UserParameters.
@@ -26,7 +26,7 @@ namespace VitexSoftware\DigestModules\Core;
 interface ZabbixOutputInterface
 {
     /**
-     * Convert module result data to Zabbix item key→value pairs
+     * Convert module result data to Zabbix item key→value pairs.
      *
      * The returned array should use Zabbix item keys as array keys
      * and scalar values (int, float, string) as values.
@@ -43,7 +43,7 @@ interface ZabbixOutputInterface
      *
      * @param array<string, mixed> $processedData Result from process() method
      *
-     * @return array<string, int|float|string> Zabbix item key→value pairs
+     * @return array<string, float|int|string> Zabbix item key→value pairs
      */
     public function toZabbixItems(array $processedData): array;
 }

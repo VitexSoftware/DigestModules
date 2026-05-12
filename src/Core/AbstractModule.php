@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace VitexSoftware\DigestModules\Core;
 
 /**
- * Abstract base class for digest modules
+ * Abstract base class for digest modules.
  *
  * Provides common functionality for all data collection modules
  *
@@ -25,47 +25,47 @@ namespace VitexSoftware\DigestModules\Core;
 abstract class AbstractModule implements ModuleInterface
 {
     /**
-     * Module name/identifier
+     * Module name/identifier.
      */
     protected string $moduleName;
 
     /**
-     * Module heading/display name
+     * Module heading/display name.
      */
     protected string $heading;
 
     /**
-     * Module description
+     * Module description.
      */
     protected string $description;
 
     /**
-     * Required provider features
+     * Required provider features.
      *
      * @var array<string>
      */
     protected array $requiredFeatures = [];
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param string $moduleName Module identifier
-     * @param string $heading Display name
+     * @param string $moduleName  Module identifier
+     * @param string $heading     Display name
      * @param string $description Module description
      */
     public function __construct(
         string $moduleName = '',
         string $heading = '',
-        string $description = ''
+        string $description = '',
     ) {
         if ($moduleName) {
             $this->moduleName = $moduleName;
         }
-        
+
         if ($heading) {
             $this->heading = $heading;
         }
-        
+
         if ($description) {
             $this->description = $description;
         }
@@ -76,9 +76,7 @@ abstract class AbstractModule implements ModuleInterface
      */
     public function getModuleName(): string
     {
-        return $this->moduleName ?: strtolower(
-            preg_replace('/([a-z])([A-Z])/', '$1_$2', basename(str_replace('\\', '/', static::class)))
-        );
+        return $this->moduleName ?: strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', basename(str_replace('\\', '/', static::class))));
     }
 
     /**
@@ -94,7 +92,7 @@ abstract class AbstractModule implements ModuleInterface
      */
     public function getDescription(): string
     {
-        return $this->description ?: 'Analysis module: ' . $this->getHeading();
+        return $this->description ?: 'Analysis module: '.$this->getHeading();
     }
 
     /**
@@ -106,19 +104,20 @@ abstract class AbstractModule implements ModuleInterface
     }
 
     /**
-     * Create base result structure
+     * Create base result structure.
      *
-     * @param \DatePeriod $period Analysis period
-     * @param bool $success Processing success flag
-     * @param array<string, mixed> $data Module data
+     * @param \DatePeriod          $period   Analysis period
+     * @param bool                 $success  Processing success flag
+     * @param array<string, mixed> $data     Module data
      * @param array<string, mixed> $metadata Additional metadata
+     *
      * @return array<string, mixed>
      */
     protected function createResult(
         \DatePeriod $period,
         bool $success,
         array $data = [],
-        array $metadata = []
+        array $metadata = [],
     ): array {
         return [
             'module_name' => $this->getModuleName(),
@@ -138,10 +137,11 @@ abstract class AbstractModule implements ModuleInterface
     }
 
     /**
-     * Format currency value
+     * Format currency value.
      *
-     * @param float $amount Amount to format
+     * @param float  $amount   Amount to format
      * @param string $currency Currency code
+     *
      * @return array<string, mixed> Formatted amount data
      */
     protected function formatCurrency(float $amount, string $currency = 'CZK'): array
@@ -149,15 +149,16 @@ abstract class AbstractModule implements ModuleInterface
         return [
             'amount' => $amount,
             'currency' => $currency,
-            'formatted' => number_format($amount, 2, ',', ' ') . ' ' . $currency,
+            'formatted' => number_format($amount, 2, ',', ' ').' '.$currency,
         ];
     }
 
     /**
-     * Calculate percentage
+     * Calculate percentage.
      *
      * @param float $value Current value
      * @param float $total Total value
+     *
      * @return float Percentage (0-100)
      */
     protected function calculatePercentage(float $value, float $total): float

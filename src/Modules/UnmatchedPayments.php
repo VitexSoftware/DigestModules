@@ -20,7 +20,7 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
 use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 
 /**
- * Unmatched payments analysis module
+ * Unmatched payments analysis module.
  *
  * Identifies incoming bank payments that have not been matched
  * to any invoice (unrecognized or undeducted earnings).
@@ -48,31 +48,31 @@ class UnmatchedPayments extends AbstractModule implements ZabbixOutputInterface
                         'period' => $period,
                     ],
                     DataProviderInterface::FILTER_PAYMENT_DIRECTION => DataProviderInterface::DIRECTION_INCOMING,
-                    DataProviderInterface::FILTER_CANCELLED          => false,
-                    DataProviderInterface::FILTER_ACCOUNTED          => false,
-                    DataProviderInterface::FILTER_MATCHED            => false,
-                    DataProviderInterface::FILTER_LIMIT              => 0,
+                    DataProviderInterface::FILTER_CANCELLED => false,
+                    DataProviderInterface::FILTER_ACCOUNTED => false,
+                    DataProviderInterface::FILTER_MATCHED => false,
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
             );
 
             $totalsByCurrency = [];
-            $paymentList      = [];
+            $paymentList = [];
 
             foreach ($payments as $payment) {
                 $currency = (string) ($payment[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
-                $amount   = $currency !== 'CZK'
+                $amount = $currency !== 'CZK'
                     ? (float) ($payment[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
                     : (float) ($payment[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
 
                 $totalsByCurrency[$currency] = ($totalsByCurrency[$currency] ?? 0.0) + $amount;
 
                 $paymentList[] = [
-                    'code'         => $payment[DataProviderInterface::FIELD_CODE] ?? '',
-                    'description'  => $payment[DataProviderInterface::FIELD_DESCRIPTION] ?? '',
+                    'code' => $payment[DataProviderInterface::FIELD_CODE] ?? '',
+                    'description' => $payment[DataProviderInterface::FIELD_DESCRIPTION] ?? '',
                     'bank_account' => $payment[DataProviderInterface::FIELD_BANK_ACCOUNT] ?? '',
-                    'company'      => $payment[DataProviderInterface::FIELD_COMPANY] ?? '',
-                    'date'         => $payment[DataProviderInterface::FIELD_DATE] ?? '',
-                    'amount'       => $this->formatCurrency($amount, $currency),
+                    'company' => $payment[DataProviderInterface::FIELD_COMPANY] ?? '',
+                    'date' => $payment[DataProviderInterface::FIELD_DATE] ?? '',
+                    'amount' => $this->formatCurrency($amount, $currency),
                 ];
             }
 
@@ -86,18 +86,18 @@ class UnmatchedPayments extends AbstractModule implements ZabbixOutputInterface
 
             return $this->createResult($period, true, [
                 'summary' => [
-                    'total_count'  => \count($payments),
+                    'total_count' => \count($payments),
                     'total_amount' => $this->formatCurrency($totalsByCurrency[$mainCurrency] ?? 0.0, $mainCurrency),
                 ],
                 'totals_by_currency' => $formattedTotals,
-                'payments'           => $paymentList,
+                'payments' => $paymentList,
             ], [
                 'provider' => $provider->getSystemName(),
             ]);
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -107,11 +107,11 @@ class UnmatchedPayments extends AbstractModule implements ZabbixOutputInterface
      */
     public function toZabbixItems(array $processedData): array
     {
-        $data    = $processedData['data'] ?? [];
+        $data = $processedData['data'] ?? [];
         $summary = $data['summary'] ?? [];
 
         return [
-            'unmatched_payments.count'        => $summary['total_count'] ?? 0,
+            'unmatched_payments.count' => $summary['total_count'] ?? 0,
             'unmatched_payments.total_amount' => $summary['total_amount']['amount'] ?? 0,
         ];
     }

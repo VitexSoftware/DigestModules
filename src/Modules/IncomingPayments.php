@@ -20,7 +20,7 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
 use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 
 /**
- * Incoming payments analysis module
+ * Incoming payments analysis module.
  *
  * Analyzes incoming bank payments (revenue) for a given period,
  * providing totals grouped by currency.
@@ -48,8 +48,8 @@ class IncomingPayments extends AbstractModule implements ZabbixOutputInterface
                         'period' => $period,
                     ],
                     DataProviderInterface::FILTER_PAYMENT_DIRECTION => DataProviderInterface::DIRECTION_INCOMING,
-                    DataProviderInterface::FILTER_CANCELLED         => false,
-                    DataProviderInterface::FILTER_LIMIT             => 0,
+                    DataProviderInterface::FILTER_CANCELLED => false,
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
             );
 
@@ -57,7 +57,7 @@ class IncomingPayments extends AbstractModule implements ZabbixOutputInterface
 
             foreach ($payments as $payment) {
                 $currency = $payment[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK';
-                $amount   = $currency !== 'CZK'
+                $amount = $currency !== 'CZK'
                     ? (float) ($payment[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
                     : (float) ($payment[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
 
@@ -73,7 +73,7 @@ class IncomingPayments extends AbstractModule implements ZabbixOutputInterface
             return $this->createResult($period, true, [
                 'summary' => [
                     'total_count' => \count($payments),
-                    'currencies'  => array_keys($totalsByCurrency),
+                    'currencies' => array_keys($totalsByCurrency),
                 ],
                 'totals_by_currency' => $formattedTotals,
             ], [
@@ -82,7 +82,7 @@ class IncomingPayments extends AbstractModule implements ZabbixOutputInterface
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

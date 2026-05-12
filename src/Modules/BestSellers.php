@@ -19,7 +19,7 @@ use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
 
 /**
- * Best selling products analysis module
+ * Best selling products analysis module.
  *
  * Identifies top selling products/services by analyzing invoice
  * line items within the given period. Requires 'relations' feature.
@@ -47,17 +47,17 @@ class BestSellers extends AbstractModule
                         'period' => $period,
                     ],
                     DataProviderInterface::FILTER_WITH_ITEMS => true,
-                    DataProviderInterface::FILTER_LIMIT      => 0,
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
             );
 
             $products = [];
-            $totals   = [];
+            $totals = [];
 
             foreach ($invoices as $invoice) {
                 $items = $invoice[DataProviderInterface::FIELD_ITEMS] ?? [];
 
-                if (!is_array($items)) {
+                if (!\is_array($items)) {
                     continue;
                 }
 
@@ -71,7 +71,7 @@ class BestSellers extends AbstractModule
                         : ($item['name'] ?? _('Unknown'));
 
                     $products[$itemIdent] = ($products[$itemIdent] ?? 0) + 1;
-                    $totals[$itemIdent]   = ($totals[$itemIdent] ?? 0.0) + (float) ($item['amount'] ?? 0);
+                    $totals[$itemIdent] = ($totals[$itemIdent] ?? 0.0) + (float) ($item['amount'] ?? 0);
                 }
             }
 
@@ -85,14 +85,14 @@ class BestSellers extends AbstractModule
                 }
 
                 $productList[] = [
-                    'code'     => $code,
+                    'code' => $code,
                     'quantity' => $count,
-                    'total'    => $totals[$code] ?? 0.0,
+                    'total' => $totals[$code] ?? 0.0,
                 ];
             }
 
             return $this->createResult($period, true, [
-                'summary'  => ['total_products' => \count($productList)],
+                'summary' => ['total_products' => \count($productList)],
                 'products' => $productList,
             ], [
                 'provider' => $provider->getSystemName(),
@@ -100,7 +100,7 @@ class BestSellers extends AbstractModule
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

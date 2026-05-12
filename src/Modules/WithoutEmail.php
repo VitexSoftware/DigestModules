@@ -19,7 +19,7 @@ use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
 
 /**
- * Contacts without email analysis module
+ * Contacts without email analysis module.
  *
  * Identifies customer/supplier contacts that are missing
  * a notification email address.
@@ -42,8 +42,8 @@ class WithoutEmail extends AbstractModule
                 DataProviderInterface::ENTITY_CONTACTS,
                 [
                     DataProviderInterface::FILTER_MISSING_EMAIL => true,
-                    DataProviderInterface::FILTER_RELATIONSHIP  => 'customer',
-                    DataProviderInterface::FILTER_LIMIT         => 0,
+                    DataProviderInterface::FILTER_RELATIONSHIP => 'customer',
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
             );
 
@@ -51,16 +51,16 @@ class WithoutEmail extends AbstractModule
 
             foreach ($contacts as $contact) {
                 $contactList[] = [
-                    'name'   => $contact[DataProviderInterface::FIELD_NAME] ?? '',
-                    'code'   => $contact[DataProviderInterface::FIELD_CODE] ?? '',
+                    'name' => $contact[DataProviderInterface::FIELD_NAME] ?? '',
+                    'code' => $contact[DataProviderInterface::FIELD_CODE] ?? '',
                     'street' => $contact[DataProviderInterface::FIELD_STREET] ?? '',
-                    'city'   => $contact[DataProviderInterface::FIELD_CITY] ?? '',
-                    'phone'  => $contact[DataProviderInterface::FIELD_PHONE] ?? '',
+                    'city' => $contact[DataProviderInterface::FIELD_CITY] ?? '',
+                    'phone' => $contact[DataProviderInterface::FIELD_PHONE] ?? '',
                 ];
             }
 
             return $this->createResult($period, true, [
-                'summary'  => ['total_count' => \count($contactList)],
+                'summary' => ['total_count' => \count($contactList)],
                 'contacts' => $contactList,
             ], [
                 'provider' => $provider->getSystemName(),
@@ -68,7 +68,7 @@ class WithoutEmail extends AbstractModule
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

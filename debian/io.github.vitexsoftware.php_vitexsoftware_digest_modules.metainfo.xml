@@ -10,6 +10,7 @@
       DigestModules provides data collection modules that return structured JSON data for accounting system analytics. Features include: - Core interfaces: ModuleInterface, DataProviderInterface - Abstract base classes for rapid module development - System-agnostic data providers (AbraFlexi, Pohoda, etc.) - Standardized module output format (JSON) - Built-in modules: OutcomingInvoices, Debtors - PSR-4 autoloading and comprehensive documentation This library focuses only on data collection and analysis, not presentation. Use with DigestRenderer for HTML output generation. Unit tests, examples and development tools for the DigestModules library.
     </p>
   </description>
+  <icon type="stock">php-vitexsoftware-digest-modules</icon>
   <categories>
     <category>Utility</category>
   </categories>

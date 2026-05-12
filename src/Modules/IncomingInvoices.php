@@ -20,7 +20,7 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
 use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 
 /**
- * Incoming invoices analysis module
+ * Incoming invoices analysis module.
  *
  * Analyzes received invoices for a given period, providing totals
  * by document type and currency.
@@ -54,25 +54,25 @@ class IncomingInvoices extends AbstractModule implements ZabbixOutputInterface
             if (empty($invoices)) {
                 return $this->createResult($period, true, [
                     'summary' => [
-                        'total_count'     => 0,
-                        'active_count'    => 0,
+                        'total_count' => 0,
+                        'active_count' => 0,
                         'cancelled_count' => 0,
                     ],
                     'totals_by_currency' => [],
-                    'by_document_type'   => [],
+                    'by_document_type' => [],
                 ]);
             }
 
             $analysis = $this->analyzeInvoices($invoices);
 
             return $this->createResult($period, true, $analysis, [
-                'provider'           => $provider->getSystemName(),
-                'records_processed'  => \count($invoices),
+                'provider' => $provider->getSystemName(),
+                'records_processed' => \count($invoices),
             ]);
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -82,34 +82,37 @@ class IncomingInvoices extends AbstractModule implements ZabbixOutputInterface
      */
     public function toZabbixItems(array $processedData): array
     {
-        $data    = $processedData['data'] ?? [];
+        $data = $processedData['data'] ?? [];
         $summary = $data['summary'] ?? [];
 
         return [
-            'incoming_invoices.count'           => $summary['total_count'] ?? 0,
-            'incoming_invoices.active_count'    => $summary['active_count'] ?? 0,
+            'incoming_invoices.count' => $summary['total_count'] ?? 0,
+            'incoming_invoices.active_count' => $summary['active_count'] ?? 0,
             'incoming_invoices.cancelled_count' => $summary['cancelled_count'] ?? 0,
         ];
     }
 
-    /** @param array<int, array<string, mixed>> $invoices */
+    /**
+     * @param array<int, array<string, mixed>> $invoices
+     */
     private function analyzeInvoices(array $invoices): array
     {
         $totalsByCurrency = [];
-        $byDocumentType   = [];
-        $activeCount      = 0;
-        $cancelledCount   = 0;
+        $byDocumentType = [];
+        $activeCount = 0;
+        $cancelledCount = 0;
 
         foreach ($invoices as $invoice) {
-            $currency     = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
-            $amount       = $currency !== 'CZK'
+            $currency = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+            $amount = $currency !== 'CZK'
                 ? (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
                 : (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
             $documentType = (string) ($invoice[DataProviderInterface::FIELD_DOCUMENT_TYPE] ?? _('Unknown'));
-            $cancelled    = (bool) ($invoice[DataProviderInterface::FIELD_CANCELLED] ?? false);
+            $cancelled = (bool) ($invoice[DataProviderInterface::FIELD_CANCELLED] ?? false);
 
             if ($cancelled) {
                 ++$cancelledCount;
+
                 continue;
             }
 
@@ -146,12 +149,12 @@ class IncomingInvoices extends AbstractModule implements ZabbixOutputInterface
 
         return [
             'summary' => [
-                'total_count'     => $activeCount + $cancelledCount,
-                'active_count'    => $activeCount,
+                'total_count' => $activeCount + $cancelledCount,
+                'active_count' => $activeCount,
                 'cancelled_count' => $cancelledCount,
             ],
             'totals_by_currency' => $formattedTotals,
-            'by_document_type'   => $formattedByType,
+            'by_document_type' => $formattedByType,
         ];
     }
 }

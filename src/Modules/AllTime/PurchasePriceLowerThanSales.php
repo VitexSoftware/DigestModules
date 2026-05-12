@@ -19,7 +19,7 @@ use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
 
 /**
- * Purchase price vs. sales price analysis module
+ * Purchase price vs. sales price analysis module.
  *
  * Identifies products where the purchase (buy) price is higher
  * than the sales (sell) price — indicating a potential loss.
@@ -42,23 +42,23 @@ class PurchasePriceLowerThanSales extends AbstractModule
             $products = $provider->getData(
                 DataProviderInterface::ENTITY_PRODUCTS,
                 [
-                    DataProviderInterface::FILTER_HAS_BUY_PRICE  => true,
+                    DataProviderInterface::FILTER_HAS_BUY_PRICE => true,
                     DataProviderInterface::FILTER_HAS_SELL_PRICE => true,
-                    DataProviderInterface::FILTER_LIMIT          => 0,
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
             );
 
             $disadvantageous = [];
 
             foreach ($products as $product) {
-                $buyPrice  = (float) ($product[DataProviderInterface::FIELD_BUY_PRICE] ?? 0);
+                $buyPrice = (float) ($product[DataProviderInterface::FIELD_BUY_PRICE] ?? 0);
                 $sellPrice = (float) ($product[DataProviderInterface::FIELD_SELL_PRICE] ?? 0);
 
                 if ($buyPrice > $sellPrice && $sellPrice > 0) {
                     $disadvantageous[] = [
-                        'code'       => $product[DataProviderInterface::FIELD_CODE] ?? '',
-                        'name'       => $product[DataProviderInterface::FIELD_NAME] ?? '',
-                        'buy_price'  => $buyPrice,
+                        'code' => $product[DataProviderInterface::FIELD_CODE] ?? '',
+                        'name' => $product[DataProviderInterface::FIELD_NAME] ?? '',
+                        'buy_price' => $buyPrice,
                         'sell_price' => $sellPrice,
                         'difference' => $buyPrice - $sellPrice,
                     ];
@@ -68,7 +68,7 @@ class PurchasePriceLowerThanSales extends AbstractModule
             usort($disadvantageous, static fn ($a, $b) => $b['difference'] <=> $a['difference']);
 
             return $this->createResult($period, true, [
-                'summary'  => ['total_count' => \count($disadvantageous)],
+                'summary' => ['total_count' => \count($disadvantageous)],
                 'products' => $disadvantageous,
             ], [
                 'provider' => $provider->getSystemName(),
@@ -76,7 +76,7 @@ class PurchasePriceLowerThanSales extends AbstractModule
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

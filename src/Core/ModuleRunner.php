@@ -16,33 +16,33 @@ declare(strict_types=1);
 namespace VitexSoftware\DigestModules\Core;
 
 /**
- * Module runner - orchestrates data collection from multiple modules
+ * Module runner - orchestrates data collection from multiple modules.
  *
  * @author Vítězslav Dvořák <info@vitexsoftware.cz>
  */
 class ModuleRunner
 {
     /**
-     * Data provider instance
+     * Data provider instance.
      */
     private DataProviderInterface $dataProvider;
 
     /**
-     * Registered modules
+     * Registered modules.
      *
      * @var array<string, ModuleInterface>
      */
     private array $modules = [];
 
     /**
-     * Processing benchmarks
+     * Processing benchmarks.
      *
      * @var array<string, array<string, float>>
      */
     private array $benchmarks = [];
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param DataProviderInterface $dataProvider Data source provider
      */
@@ -52,29 +52,26 @@ class ModuleRunner
     }
 
     /**
-     * Add a module to the runner
+     * Add a module to the runner.
      *
-     * @param string $key Module key/identifier
+     * @param string                 $key    Module key/identifier
      * @param ModuleInterface|string $module Module instance or class name
-     * @return self
      */
     public function addModule(string $key, ModuleInterface|string $module): self
     {
-        if (is_string($module)) {
+        if (\is_string($module)) {
             $module = new $module();
         }
 
         // Check if provider supports required features
         foreach ($module->getRequiredFeatures() as $feature) {
             if (!$this->dataProvider->supportsFeature($feature)) {
-                throw new \InvalidArgumentException(
-                    sprintf(
-                        'Data provider "%s" does not support required feature "%s" for module "%s"',
-                        $this->dataProvider->getSystemName(),
-                        $feature,
-                        $module->getModuleName()
-                    )
-                );
+                throw new \InvalidArgumentException(sprintf(
+                    'Data provider "%s" does not support required feature "%s" for module "%s"',
+                    $this->dataProvider->getSystemName(),
+                    $feature,
+                    $module->getModuleName(),
+                ));
             }
         }
 
@@ -84,9 +81,10 @@ class ModuleRunner
     }
 
     /**
-     * Run all registered modules for the given period
+     * Run all registered modules for the given period.
      *
      * @param \DatePeriod $period Time period to analyze
+     *
      * @return array<string, mixed> Complete results from all modules
      */
     public function run(\DatePeriod $period): array
@@ -119,7 +117,7 @@ class ModuleRunner
                     'success' => false,
                     'error' => [
                         'message' => $e->getMessage(),
-                        'type' => get_class($e),
+                        'type' => $e::class,
                     ],
                     'period' => [
                         'start' => $period->getStartDate()->format('Y-m-d'),
@@ -137,7 +135,7 @@ class ModuleRunner
     }
 
     /**
-     * Get registered modules
+     * Get registered modules.
      *
      * @return array<string, ModuleInterface>
      */
@@ -147,9 +145,7 @@ class ModuleRunner
     }
 
     /**
-     * Get data provider
-     *
-     * @return DataProviderInterface
+     * Get data provider.
      */
     public function getDataProvider(): DataProviderInterface
     {
@@ -157,7 +153,7 @@ class ModuleRunner
     }
 
     /**
-     * Start timing a module
+     * Start timing a module.
      *
      * @param string $moduleKey Module key
      */
@@ -167,14 +163,14 @@ class ModuleRunner
     }
 
     /**
-     * Stop timing a module
+     * Stop timing a module.
      *
      * @param string $moduleKey Module key
      */
     private function stopTimer(string $moduleKey): void
     {
         $this->benchmarks[$moduleKey]['end'] = microtime(true);
-        $this->benchmarks[$moduleKey]['duration'] = 
+        $this->benchmarks[$moduleKey]['duration'] =
             $this->benchmarks[$moduleKey]['end'] - $this->benchmarks[$moduleKey]['start'];
     }
 }

@@ -19,7 +19,7 @@ use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
 
 /**
- * Debtors analysis module
+ * Debtors analysis module.
  *
  * Analyzes unpaid overdue invoices and tracks debtors.
  *
@@ -41,20 +41,20 @@ class Debtors extends AbstractModule
             $unpaidInvoices = $provider->getData(
                 DataProviderInterface::ENTITY_OUTCOMING_INVOICES,
                 [
-                    DataProviderInterface::FILTER_OVERDUE               => true,
-                    DataProviderInterface::FILTER_PAYMENT_STATUS        => DataProviderInterface::PAYMENT_STATUS_UNPAID_OR_PARTIAL,
-                    DataProviderInterface::FILTER_CANCELLED             => false,
+                    DataProviderInterface::FILTER_OVERDUE => true,
+                    DataProviderInterface::FILTER_PAYMENT_STATUS => DataProviderInterface::PAYMENT_STATUS_UNPAID_OR_PARTIAL,
+                    DataProviderInterface::FILTER_CANCELLED => false,
                     DataProviderInterface::FILTER_EXCLUDE_DOCUMENT_TYPE => DataProviderInterface::DOCUMENT_TYPE_CREDIT_NOTE,
-                    DataProviderInterface::FILTER_LIMIT                 => 0,
+                    DataProviderInterface::FILTER_LIMIT => 0,
                 ],
             );
 
             if (empty($unpaidInvoices)) {
                 return $this->createResult($period, true, [
                     'summary' => [
-                        'total_debtors'        => 0,
-                        'total_unpaid_amount'  => $this->formatCurrency(0.0),
-                        'message'              => 'No unpaid invoices found',
+                        'total_debtors' => 0,
+                        'total_unpaid_amount' => $this->formatCurrency(0.0),
+                        'message' => 'No unpaid invoices found',
                     ],
                 ]);
             }
@@ -64,37 +64,39 @@ class Debtors extends AbstractModule
             return $this->createResult($period, false, [], [
                 'error' => [
                     'message' => $e->getMessage(),
-                    'type'    => get_class($e),
+                    'type' => $e::class,
                 ],
             ]);
         }
     }
 
-    /** @param array<array<string, mixed>> $unpaidInvoices */
+    /**
+     * @param array<array<string, mixed>> $unpaidInvoices
+     */
     private function analyzeDebtors(array $unpaidInvoices): array
     {
         $debtorsByCompany = [];
         $totalsByCurrency = [];
-        $overdueRanges    = ['0-30' => 0, '31-60' => 0, '61-90' => 0, '90+' => 0];
+        $overdueRanges = ['0-30' => 0, '31-60' => 0, '61-90' => 0, '90+' => 0];
 
         foreach ($unpaidInvoices as $invoice) {
-            $company      = (string) ($invoice[DataProviderInterface::FIELD_COMPANY] ?? 'unknown');
-            $currency     = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
-            $amount       = $currency !== 'CZK'
+            $company = (string) ($invoice[DataProviderInterface::FIELD_COMPANY] ?? 'unknown');
+            $currency = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+            $amount = $currency !== 'CZK'
                 ? (float) ($invoice[DataProviderInterface::FIELD_REMAINING_AMOUNT_FOREIGN] ?? 0)
                 : (float) ($invoice[DataProviderInterface::FIELD_REMAINING_AMOUNT] ?? 0);
-            $overdueDays  = $this->calculateOverdueDays($invoice[DataProviderInterface::FIELD_DUE_DATE] ?? '');
+            $overdueDays = self::calculateOverdueDays($invoice[DataProviderInterface::FIELD_DUE_DATE] ?? '');
 
             if (!isset($debtorsByCompany[$company])) {
                 $debtorsByCompany[$company] = [
-                    'company'          => $company,
-                    'invoices_count'   => 0,
-                    'total_amount'     => [],
+                    'company' => $company,
+                    'invoices_count' => 0,
+                    'total_amount' => [],
                     'overdue_days_max' => 0,
                 ];
             }
 
-            $debtorsByCompany[$company]['invoices_count']++;
+            ++$debtorsByCompany[$company]['invoices_count'];
 
             if (!isset($debtorsByCompany[$company]['total_amount'][$currency])) {
                 $debtorsByCompany[$company]['total_amount'][$currency] = 0.0;
@@ -112,7 +114,7 @@ class Debtors extends AbstractModule
                 $overdueDays <= 30 => $overdueRanges['0-30']++,
                 $overdueDays <= 60 => $overdueRanges['31-60']++,
                 $overdueDays <= 90 => $overdueRanges['61-90']++,
-                default            => $overdueRanges['90+']++,
+                default => $overdueRanges['90+']++,
             };
         }
 
@@ -141,18 +143,18 @@ class Debtors extends AbstractModule
 
         return [
             'summary' => [
-                'total_debtors'  => count($debtorsByCompany),
-                'total_invoices' => count($unpaidInvoices),
-                'currencies'     => array_keys($totalsByCurrency),
+                'total_debtors' => \count($debtorsByCompany),
+                'total_invoices' => \count($unpaidInvoices),
+                'currencies' => array_keys($totalsByCurrency),
             ],
             'totals_by_currency' => $formattedTotals,
             'overdue_ranges' => $overdueRanges,
-            'top_debtors'    => array_slice($debtorsByCompany, 0, 20, true),
-            'all_debtors'    => $debtorsByCompany,
+            'top_debtors' => \array_slice($debtorsByCompany, 0, 20, true),
+            'all_debtors' => $debtorsByCompany,
         ];
     }
 
-    private function calculateOverdueDays(string $dueDateStr): int
+    private static function calculateOverdueDays(string $dueDateStr): int
     {
         if (empty($dueDateStr)) {
             return 0;
@@ -160,8 +162,8 @@ class Debtors extends AbstractModule
 
         try {
             $dueDate = new \DateTime($dueDateStr);
-            $today   = new \DateTime();
-            $diff    = $today->diff($dueDate);
+            $today = new \DateTime();
+            $diff = $today->diff($dueDate);
 
             return $dueDate < $today ? (int) $diff->days : 0;
         } catch (\Exception) {

@@ -19,7 +19,7 @@ use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
 
 /**
- * Outcoming invoices analysis module
+ * Outcoming invoices analysis module.
  *
  * Analyzes issued invoices for the given period.
  *
@@ -64,32 +64,35 @@ class OutcomingInvoices extends AbstractModule
             return $this->createResult($period, false, [], [
                 'error' => [
                     'message' => $e->getMessage(),
-                    'type'    => get_class($e),
+                    'type' => $e::class,
                 ],
             ]);
         }
     }
 
-    /** @param array<array<string, mixed>> $invoicesData */
+    /**
+     * @param array<array<string, mixed>> $invoicesData
+     */
     private function analyzeInvoices(array $invoicesData): array
     {
-        $totalCount       = 0;
-        $stornoCount      = 0;
+        $totalCount = 0;
+        $stornoCount = 0;
         $totalsByCurrency = [];
-        $typDoklCounts    = [];
-        $typDoklTotals    = [];
+        $typDoklCounts = [];
+        $typDoklTotals = [];
 
         foreach ($invoicesData as $invoice) {
             ++$totalCount;
 
             if ($invoice[DataProviderInterface::FIELD_CANCELLED] ?? false) {
                 ++$stornoCount;
+
                 continue;
             }
 
-            $currency     = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+            $currency = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
             $documentType = (string) ($invoice[DataProviderInterface::FIELD_DOCUMENT_TYPE] ?? 'unknown');
-            $amount       = $currency !== 'CZK'
+            $amount = $currency !== 'CZK'
                 ? (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
                     + (float) ($invoice[DataProviderInterface::FIELD_DEPOSIT_AMOUNT_FOREIGN] ?? 0)
                 : (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0)
@@ -109,14 +112,14 @@ class OutcomingInvoices extends AbstractModule
 
         $analysis = [
             'summary' => [
-                'total_count'          => $totalCount,
-                'active_count'         => $totalCount - $stornoCount,
-                'cancelled_count'      => $stornoCount,
-                'document_types_count' => count($typDoklCounts),
-                'currencies'           => array_keys($totalsByCurrency),
+                'total_count' => $totalCount,
+                'active_count' => $totalCount - $stornoCount,
+                'cancelled_count' => $stornoCount,
+                'document_types_count' => \count($typDoklCounts),
+                'currencies' => array_keys($totalsByCurrency),
             ],
             'totals_by_currency' => [],
-            'by_document_type'   => [],
+            'by_document_type' => [],
         ];
 
         foreach ($totalsByCurrency as $currency => $total) {
@@ -125,7 +128,7 @@ class OutcomingInvoices extends AbstractModule
 
         foreach ($typDoklTotals as $docType => $currencyTotals) {
             $analysis['by_document_type'][$docType] = [
-                'count'  => $typDoklCounts[$docType],
+                'count' => $typDoklCounts[$docType],
                 'totals' => [],
             ];
 

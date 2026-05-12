@@ -19,7 +19,7 @@ use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
 
 /**
- * Payment reminders analysis module
+ * Payment reminders analysis module.
  *
  * Analyzes payment reminders (1st, 2nd, pre-litigation) sent within
  * the analyzed period, grouped by reminder level.
@@ -51,44 +51,44 @@ class Reminds extends AbstractModule
             );
 
             $reminderCounts = ['first' => 0, 'second' => 0, 'pre_litigation' => 0];
-            $invoiceList    = [];
+            $invoiceList = [];
 
             foreach ($invoices as $invoice) {
-                $currency  = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
+                $currency = (string) ($invoice[DataProviderInterface::FIELD_CURRENCY] ?? 'CZK');
                 $remaining = $currency !== 'CZK'
                     ? (float) ($invoice[DataProviderInterface::FIELD_REMAINING_AMOUNT_FOREIGN] ?? 0)
                     : (float) ($invoice[DataProviderInterface::FIELD_REMAINING_AMOUNT] ?? 0);
 
-                $firstDate  = $invoice[DataProviderInterface::FIELD_FIRST_REMINDER_DATE] ?? '';
+                $firstDate = $invoice[DataProviderInterface::FIELD_FIRST_REMINDER_DATE] ?? '';
                 $secondDate = $invoice[DataProviderInterface::FIELD_SECOND_REMINDER_DATE] ?? '';
-                $preDate    = $invoice[DataProviderInterface::FIELD_PRE_LITIGATION_DATE] ?? '';
+                $preDate = $invoice[DataProviderInterface::FIELD_PRE_LITIGATION_DATE] ?? '';
 
-                if (!empty($firstDate) && $this->isDateInPeriod($firstDate, $period)) {
+                if (!empty($firstDate) && self::isDateInPeriod($firstDate, $period)) {
                     ++$reminderCounts['first'];
                 }
 
-                if (!empty($secondDate) && $this->isDateInPeriod($secondDate, $period)) {
+                if (!empty($secondDate) && self::isDateInPeriod($secondDate, $period)) {
                     ++$reminderCounts['second'];
                 }
 
-                if (!empty($preDate) && $this->isDateInPeriod($preDate, $period)) {
+                if (!empty($preDate) && self::isDateInPeriod($preDate, $period)) {
                     ++$reminderCounts['pre_litigation'];
                 }
 
                 $invoiceList[] = [
-                    'code'             => $invoice[DataProviderInterface::FIELD_CODE] ?? '',
-                    'company'          => $invoice[DataProviderInterface::FIELD_COMPANY] ?? '',
-                    'description'      => $invoice[DataProviderInterface::FIELD_DESCRIPTION] ?? '',
-                    'remaining'        => $this->formatCurrency($remaining, $currency),
-                    'first_reminder'   => $firstDate,
-                    'second_reminder'  => $secondDate,
-                    'pre_litigation'   => $preDate,
+                    'code' => $invoice[DataProviderInterface::FIELD_CODE] ?? '',
+                    'company' => $invoice[DataProviderInterface::FIELD_COMPANY] ?? '',
+                    'description' => $invoice[DataProviderInterface::FIELD_DESCRIPTION] ?? '',
+                    'remaining' => $this->formatCurrency($remaining, $currency),
+                    'first_reminder' => $firstDate,
+                    'second_reminder' => $secondDate,
+                    'pre_litigation' => $preDate,
                 ];
             }
 
             return $this->createResult($period, true, [
                 'summary' => [
-                    'total_invoices'  => \count($invoices),
+                    'total_invoices' => \count($invoices),
                     'reminder_counts' => $reminderCounts,
                     'total_reminders' => array_sum($reminderCounts),
                 ],
@@ -99,12 +99,12 @@ class Reminds extends AbstractModule
         } catch (\Throwable $e) {
             return $this->createResult($period, false, [], [
                 'provider' => $provider->getSystemName(),
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
 
-    private function isDateInPeriod(string $dateStr, \DatePeriod $period): bool
+    private static function isDateInPeriod(string $dateStr, \DatePeriod $period): bool
     {
         if (empty($dateStr)) {
             return false;

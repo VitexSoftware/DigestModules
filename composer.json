@@ -29,8 +29,16 @@
         }
     },
     "require-dev": {
-        "phpunit/phpunit": "^10.0",
-        "phpstan/phpstan": "*"
+        "phpunit/phpunit": "*",
+        "phpstan/phpstan": "*",
+        "friendsofphp/php-cs-fixer": "^3.93",
+        "ergebnis/composer-normalize": "^2.49",
+        "ergebnis/php-cs-fixer-config": "^6.59"
+    },
+    "config": {
+        "allow-plugins": {
+            "ergebnis/composer-normalize": true
+        }
     },
     "minimum-stability": "stable"
 }
