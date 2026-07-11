@@ -17,6 +17,7 @@ namespace VitexSoftware\DigestModules\Modules;
 
 use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
+use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 
 /**
  * Debtors analysis module.
@@ -25,7 +26,7 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
  *
  * @author Vítězslav Dvořák <info@vitexsoftware.cz>
  */
-class Debtors extends AbstractModule
+class Debtors extends AbstractModule implements ZabbixOutputInterface
 {
     protected string $moduleName = 'debtors';
     protected string $heading = 'Debtors';
@@ -68,6 +69,25 @@ class Debtors extends AbstractModule
                 ],
             ]);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function toZabbixItems(array $processedData): array
+    {
+        $data = $processedData['data'] ?? [];
+        $summary = $data['summary'] ?? [];
+        $overdue = $data['overdue_ranges'] ?? [];
+
+        return [
+            'debtors.count' => $summary['total_debtors'] ?? 0,
+            'debtors.invoices_count' => $summary['total_invoices'] ?? 0,
+            'debtors.overdue_0_30' => $overdue['0-30'] ?? 0,
+            'debtors.overdue_31_60' => $overdue['31-60'] ?? 0,
+            'debtors.overdue_61_90' => $overdue['61-90'] ?? 0,
+            'debtors.overdue_90plus' => $overdue['90+'] ?? 0,
+        ];
     }
 
     /**

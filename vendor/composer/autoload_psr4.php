@@ -8,6 +8,7 @@ $baseDir = dirname($vendorDir);
 return array(
     'VitexSoftware\\DigestModules\\Tests\\' => array($baseDir . '/tests'),
     'VitexSoftware\\DigestModules\\' => array($baseDir . '/src'),
+    'Symfony\\Polyfill\\Php85\\' => array($vendorDir . '/symfony/polyfill-php85'),
     'Symfony\\Polyfill\\Php84\\' => array($vendorDir . '/symfony/polyfill-php84'),
     'Symfony\\Polyfill\\Php81\\' => array($vendorDir . '/symfony/polyfill-php81'),
     'Symfony\\Polyfill\\Php80\\' => array($vendorDir . '/symfony/polyfill-php80'),

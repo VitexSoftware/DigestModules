@@ -17,6 +17,7 @@ namespace VitexSoftware\DigestModules\Modules;
 
 use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
+use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 
 /**
  * Outcoming invoices analysis module.
@@ -25,7 +26,7 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
  *
  * @author Vítězslav Dvořák <info@vitexsoftware.cz>
  */
-class OutcomingInvoices extends AbstractModule
+class OutcomingInvoices extends AbstractModule implements ZabbixOutputInterface
 {
     protected string $moduleName = 'outcoming_invoices';
     protected string $heading = 'Outcoming Invoices';
@@ -68,6 +69,21 @@ class OutcomingInvoices extends AbstractModule
                 ],
             ]);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function toZabbixItems(array $processedData): array
+    {
+        $data = $processedData['data'] ?? [];
+        $summary = $data['summary'] ?? [];
+
+        return [
+            'outcoming_invoices.count' => $summary['total_count'] ?? 0,
+            'outcoming_invoices.active_count' => $summary['active_count'] ?? 0,
+            'outcoming_invoices.cancelled_count' => $summary['cancelled_count'] ?? 0,
+        ];
     }
 
     /**
