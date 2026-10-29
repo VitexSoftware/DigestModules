@@ -37,3 +37,14 @@ phpunit.xml
 /cache/
 *.cache
 
+
+# dpkg-buildpackage output
+/debian/.debhelper/
+/debian/debhelper-build-stamp
+/debian/files
+/debian/*.substvars
+/debian/*.debhelper.log
+/debian/php-vitexsoftware-digest-modules/
+/debian/php-vitexsoftware-digest-modules-dev/
+/src/autoload.php
+/debian/autoload.php.tpl
