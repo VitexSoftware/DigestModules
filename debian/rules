@@ -10,6 +10,12 @@ override_dh_auto_build:
 
 override_dh_install:
 	dh_install
+	# Compile and install gettext catalogs
+	for po in i18n/*/LC_MESSAGES/*.po; do \
+	  lang=$$(basename $$(dirname $$(dirname $$po))); \
+	  install -d debian/php-vitexsoftware-digest-modules/usr/share/locale/$$lang/LC_MESSAGES; \
+	  msgfmt -o debian/php-vitexsoftware-digest-modules/usr/share/locale/$$lang/LC_MESSAGES/$$(basename $$po .po).mo $$po; \
+	done
 	# Install the autoloader to /usr/share/php/VitexSoftware/DigestModules/
 	install -D -m 0644 src/autoload.php debian/php-vitexsoftware-digest-modules/usr/share/php/VitexSoftware/DigestModules/autoload.php
 	# Register the autoloader

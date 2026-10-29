@@ -68,7 +68,7 @@ class BestSellers extends AbstractModule
 
                     $itemIdent = !empty($item['product_code'])
                         ? (string) $item['product_code']
-                        : ($item['name'] ?? _('Unknown'));
+                        : ($item['name'] ?? self::translate('Unknown'));
 
                     $products[$itemIdent] = ($products[$itemIdent] ?? 0) + 1;
                     $totals[$itemIdent] = ($totals[$itemIdent] ?? 0.0) + (float) ($item['amount'] ?? 0);

@@ -84,7 +84,7 @@ abstract class AbstractModule implements ModuleInterface
      */
     public function getHeading(): string
     {
-        return $this->heading ?: ucwords(str_replace('_', ' ', $this->getModuleName()));
+        return $this->heading ? self::translate($this->heading) : ucwords(str_replace('_', ' ', $this->getModuleName()));
     }
 
     /**
@@ -92,7 +92,28 @@ abstract class AbstractModule implements ModuleInterface
      */
     public function getDescription(): string
     {
-        return $this->description ?: 'Analysis module: '.$this->getHeading();
+        return $this->description ? self::translate($this->description) : 'Analysis module: '.$this->getHeading();
+    }
+
+    /**
+     * Translate a message using the "digest-modules" gettext domain.
+     *
+     * The locale itself is chosen by the application (e.g. \Ease\Locale).
+     *
+     * @param string $message Message in English
+     */
+    public static function translate(string $message): string
+    {
+        static $bound = false;
+
+        if (!$bound) {
+            $localeDir = getenv('DIGEST_LOCALEDIR') ?: '/usr/share/locale';
+            bindtextdomain('digest-modules', $localeDir);
+            bind_textdomain_codeset('digest-modules', 'UTF-8');
+            $bound = true;
+        }
+
+        return dgettext('digest-modules', $message);
     }
 
     /**

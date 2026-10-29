@@ -107,7 +107,7 @@ class IncomingInvoices extends AbstractModule implements ZabbixOutputInterface
             $amount = $currency !== 'CZK'
                 ? (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT_FOREIGN] ?? 0)
                 : (float) ($invoice[DataProviderInterface::FIELD_TOTAL_AMOUNT] ?? 0);
-            $documentType = (string) ($invoice[DataProviderInterface::FIELD_DOCUMENT_TYPE] ?? _('Unknown'));
+            $documentType = (string) ($invoice[DataProviderInterface::FIELD_DOCUMENT_TYPE] ?? self::translate('Unknown'));
             $cancelled = (bool) ($invoice[DataProviderInterface::FIELD_CANCELLED] ?? false);
 
             if ($cancelled) {

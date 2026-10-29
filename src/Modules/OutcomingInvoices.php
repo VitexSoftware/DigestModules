@@ -55,7 +55,7 @@ class OutcomingInvoices extends AbstractModule implements ZabbixOutputInterface
                     'summary' => [
                         'total_count' => 0,
                         'total_amount' => $this->formatCurrency(0.0),
-                        'message' => 'No outcoming invoices found for the specified period',
+                        'message' => self::translate('No outcoming invoices found for the specified period'),
                     ],
                 ]);
             }

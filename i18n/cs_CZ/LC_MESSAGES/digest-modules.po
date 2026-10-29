@@ -1,0 +1,125 @@
+# Czech translation of php-vitexsoftware-digest-modules.
+# Copyright (C) VitexSoftware
+msgid ""
+msgstr ""
+"Project-Id-Version: php-vitexsoftware-digest-modules\n"
+"Language: cs_CZ\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+msgid "Best selling products"
+msgstr "Nejprodávanější produkty"
+
+msgid "Customers without notification email address"
+msgstr "Zákazníci bez e-mailové adresy pro upozornění"
+
+msgid "Customers without notification phone number"
+msgstr "Zákazníci bez telefonního čísla pro upozornění"
+
+msgid "Debtors"
+msgstr "Dlužníci"
+
+msgid "Incoming invoices"
+msgstr "Přijaté faktury"
+
+msgid "Incoming payments"
+msgstr "Příchozí platby"
+
+msgid "Incoming payments chart"
+msgstr "Graf příchozích plateb"
+
+msgid "Issued invoices not notified to the client"
+msgstr "Vydané faktury neoznámené klientovi"
+
+msgid "New or updated customers"
+msgstr "Noví nebo aktualizovaní zákazníci"
+
+msgid "Non-deducted proformas"
+msgstr "Neodečtené zálohy"
+
+msgid "Outcoming Invoices"
+msgstr "Vydané faktury"
+
+msgid "Outcoming payments"
+msgstr "Odchozí platby"
+
+msgid "Product purchase price lower than sales"
+msgstr "Nákupní cena produktu nižší než prodejní"
+
+msgid "Reminders"
+msgstr "Upomínky"
+
+msgid "Unmatched payments"
+msgstr "Nespárované platby"
+
+msgid "Waiting income"
+msgstr "Očekávané příjmy"
+
+msgid "Waiting payments"
+msgstr "Očekávané platby"
+
+msgid "Analysis of issued invoices including totals, document types, and currency breakdown"
+msgstr "Rozbor vydaných faktur včetně součtů, typů dokladů a rozdělení podle měn"
+
+msgid "Analysis of outgoing bank payments (expenses) by currency"
+msgstr "Rozbor odchozích bankovních plateb (výdajů) podle měn"
+
+msgid "Analysis of received bank payments (revenue) by currency"
+msgstr "Rozbor přijatých bankovních plateb (příjmů) podle měn"
+
+msgid "Analysis of received invoices including totals by document type and currency"
+msgstr "Rozbor přijatých faktur včetně součtů podle typu dokladu a měny"
+
+msgid "Analysis of unpaid invoices and overdue amounts by customer"
+msgstr "Rozbor neuhrazených faktur a částek po splatnosti podle zákazníků"
+
+msgid "Contacts created or updated within the analyzed period"
+msgstr "Kontakty vytvořené nebo upravené v analyzovaném období"
+
+msgid "Contacts missing email address for notifications"
+msgstr "Kontakty bez e-mailové adresy pro upozornění"
+
+msgid "Contacts missing phone number for notifications"
+msgstr "Kontakty bez telefonního čísla pro upozornění"
+
+msgid "Daily income aggregation for chart visualization"
+msgstr "Denní souhrn příjmů pro zobrazení v grafu"
+
+msgid "Incoming payments not matched to any invoice"
+msgstr "Příchozí platby nespárované s žádnou fakturou"
+
+msgid "Outcoming invoices with pending or missing email notification"
+msgstr "Vydané faktury s čekajícím nebo chybějícím e-mailovým upozorněním"
+
+msgid "Paid proforma invoices not yet fully deducted"
+msgstr "Uhrazené zálohové faktury, které ještě nejsou plně odečteny"
+
+msgid "Payment reminders sent within the analyzed period"
+msgstr "Upomínky odeslané v analyzovaném období"
+
+msgid "Products where buy price exceeds sell price (potential loss)"
+msgstr "Produkty, jejichž nákupní cena převyšuje prodejní (možná ztráta)"
+
+msgid "Top selling products/services by invoice line items"
+msgstr "Nejprodávanější produkty a služby podle řádků faktur"
+
+msgid "Unpaid incoming invoices due within the analyzed period (amounts we must pay)"
+msgstr "Neuhrazené přijaté faktury splatné v analyzovaném období (částky k zaplacení)"
+
+msgid "Unpaid outgoing invoices due within the analyzed period"
+msgstr "Neuhrazené vydané faktury splatné v analyzovaném období"
+
+msgid "Weekly income aggregation for chart visualization"
+msgstr "Týdenní souhrn příjmů pro zobrazení v grafu"
+
+msgid "No unpaid invoices found"
+msgstr "Nenalezeny žádné neuhrazené faktury"
+
+msgid "No outcoming invoices found for the specified period"
+msgstr "Za zadané období nebyly nalezeny žádné vydané faktury"
+
+msgid "Unknown"
+msgstr "Neznámý"
+

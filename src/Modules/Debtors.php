@@ -55,7 +55,7 @@ class Debtors extends AbstractModule implements ZabbixOutputInterface
                     'summary' => [
                         'total_debtors' => 0,
                         'total_unpaid_amount' => $this->formatCurrency(0.0),
-                        'message' => 'No unpaid invoices found',
+                        'message' => self::translate('No unpaid invoices found'),
                     ],
                 ]);
             }
