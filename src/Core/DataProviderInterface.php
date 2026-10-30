@@ -123,9 +123,15 @@ interface DataProviderInterface
     public const FILTER_HAS_SELL_PRICE = 'has_sell_price';
 
     /**
-     * Contact relationship type: 'customer' | 'supplier'.
+     * Contact relationship type: 'customer' (customer or customer+supplier,
+     * pure suppliers and undefined relations are excluded) | 'supplier'.
      */
     public const FILTER_RELATIONSHIP = 'relationship';
+
+    // ── Contact relationship values ────────────────────────────────────────
+    public const RELATIONSHIP_CUSTOMER = 'customer';
+    public const RELATIONSHIP_SUPPLIER = 'supplier';
+    public const RELATIONSHIP_CUSTOMER_SUPPLIER = 'customer_supplier';
 
     /**
      * Maximum number of records to return (int).
@@ -170,6 +176,7 @@ interface DataProviderInterface
     public const FIELD_PHONE = 'phone';
     public const FIELD_STREET = 'street';
     public const FIELD_CITY = 'city';
+    public const FIELD_RELATIONSHIP = 'relationship';
     public const FIELD_BUY_PRICE = 'buy_price';
     public const FIELD_SELL_PRICE = 'sell_price';
 

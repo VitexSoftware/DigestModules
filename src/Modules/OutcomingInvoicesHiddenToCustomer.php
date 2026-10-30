@@ -19,7 +19,7 @@ use VitexSoftware\DigestModules\Core\AbstractModule;
 use VitexSoftware\DigestModules\Core\DataProviderInterface;
 
 /**
- * Outcoming invoices hidden to customer module.
+ * Outgoing invoices hidden to customer module.
  *
  * Identifies issued invoices that have not been emailed
  * to the customer (mail status is 'pending' or 'empty').
@@ -30,7 +30,7 @@ class OutcomingInvoicesHiddenToCustomer extends AbstractModule
 {
     protected string $moduleName = 'outcoming_invoices_hidden';
     protected string $heading = 'Issued invoices not notified to the client';
-    protected string $description = 'Outcoming invoices with pending or missing email notification';
+    protected string $description = 'Outgoing invoices with pending or missing email notification';
     protected array $requiredFeatures = ['date_filtering'];
 
     /**

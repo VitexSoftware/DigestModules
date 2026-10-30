@@ -20,7 +20,7 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
 use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 
 /**
- * Outcoming payments analysis module.
+ * Outgoing payments analysis module.
  *
  * Analyzes outgoing bank payments (expenses) for a given period,
  * providing totals grouped by currency.
@@ -30,7 +30,7 @@ use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 class OutcomingPayments extends AbstractModule implements ZabbixOutputInterface
 {
     protected string $moduleName = 'outcoming_payments';
-    protected string $heading = 'Outcoming payments';
+    protected string $heading = 'Outgoing payments';
     protected string $description = 'Analysis of outgoing bank payments (expenses) by currency';
     protected array $requiredFeatures = ['date_filtering'];
 

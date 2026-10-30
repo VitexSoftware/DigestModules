@@ -39,10 +39,10 @@ msgstr "Noví nebo aktualizovaní zákazníci"
 msgid "Non-deducted proformas"
 msgstr "Neodečtené zálohy"
 
-msgid "Outcoming Invoices"
+msgid "Outgoing Invoices"
 msgstr "Vydané faktury"
 
-msgid "Outcoming payments"
+msgid "Outgoing payments"
 msgstr "Odchozí platby"
 
 msgid "Product purchase price lower than sales"
@@ -90,7 +90,7 @@ msgstr "Denní souhrn příjmů pro zobrazení v grafu"
 msgid "Incoming payments not matched to any invoice"
 msgstr "Příchozí platby nespárované s žádnou fakturou"
 
-msgid "Outcoming invoices with pending or missing email notification"
+msgid "Outgoing invoices with pending or missing email notification"
 msgstr "Vydané faktury s čekajícím nebo chybějícím e-mailovým upozorněním"
 
 msgid "Paid proforma invoices not yet fully deducted"
@@ -117,7 +117,7 @@ msgstr "Týdenní souhrn příjmů pro zobrazení v grafu"
 msgid "No unpaid invoices found"
 msgstr "Nenalezeny žádné neuhrazené faktury"
 
-msgid "No outcoming invoices found for the specified period"
+msgid "No outgoing invoices found for the specified period"
 msgstr "Za zadané období nebyly nalezeny žádné vydané faktury"
 
 msgid "Unknown"

@@ -147,6 +147,26 @@ class DebtorsTest extends TestCase
         $this->assertSame('2024-01-01', $result['period']['start']);
         $this->assertSame('2024-02-01', $result['period']['end']);
     }
+    public function testTopDebtorsAreLimitedAndTotalReported(): void
+    {
+        $invoices = [];
+
+        for ($i = 1; $i <= 55; ++$i) {
+            $invoices[] = [
+                DataProviderInterface::FIELD_COMPANY => 'Company '.$i,
+                DataProviderInterface::FIELD_CURRENCY => 'CZK',
+                DataProviderInterface::FIELD_REMAINING_AMOUNT => 1000.0,
+                DataProviderInterface::FIELD_DUE_DATE => '2023-11-01',
+            ];
+        }
+
+        $result = (new Debtors())->process($this->makeProvider($invoices), self::makePeriod());
+
+        $this->assertCount(Debtors::TOP_DEBTORS_LIMIT, $result['data']['top_debtors']);
+        $this->assertSame(Debtors::TOP_DEBTORS_LIMIT, $result['data']['top_limit']);
+        $this->assertSame(55, $result['data']['top_total']);
+    }
+
     private static function makePeriod(): \DatePeriod
     {
         return new \DatePeriod(

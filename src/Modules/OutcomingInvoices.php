@@ -20,7 +20,7 @@ use VitexSoftware\DigestModules\Core\DataProviderInterface;
 use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 
 /**
- * Outcoming invoices analysis module.
+ * Outgoing invoices analysis module.
  *
  * Analyzes issued invoices for the given period.
  *
@@ -29,7 +29,7 @@ use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
 class OutcomingInvoices extends AbstractModule implements ZabbixOutputInterface
 {
     protected string $moduleName = 'outcoming_invoices';
-    protected string $heading = 'Outcoming Invoices';
+    protected string $heading = 'Outgoing Invoices';
     protected string $description = 'Analysis of issued invoices including totals, document types, and currency breakdown';
     protected array $requiredFeatures = ['date_filtering', 'document_types'];
 
@@ -55,7 +55,7 @@ class OutcomingInvoices extends AbstractModule implements ZabbixOutputInterface
                     'summary' => [
                         'total_count' => 0,
                         'total_amount' => $this->formatCurrency(0.0),
-                        'message' => self::translate('No outcoming invoices found for the specified period'),
+                        'message' => self::translate('No outgoing invoices found for the specified period'),
                     ],
                 ]);
             }
