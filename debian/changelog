@@ -1,3 +1,13 @@
+php-vitexsoftware-digest-modules (1.2.0) unstable; urgency=medium
+
+  * Customers without notification email/phone: only customers and
+    supplier/customers are listed, pure suppliers and contacts without a
+    relationship are left out (new relationship filter and field in the data provider interface)
+  * Debtors: report how many debtors are listed (top_limit) and how many exist (top_total)
+  * Fix wording: "Outcoming" is now "Outgoing" in module headings and Czech translations
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Fri, 30 Oct 2026 14:12:41 +0100
+
 php-vitexsoftware-digest-modules (1.1.0) unstable; urgency=medium
 
   * Czech localization: module headings, descriptions and messages
