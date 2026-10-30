@@ -147,7 +147,7 @@ class DebtorsTest extends TestCase
         $this->assertSame('2024-01-01', $result['period']['start']);
         $this->assertSame('2024-02-01', $result['period']['end']);
     }
-    public function testTopDebtorsAreLimitedAndTotalReported(): void
+    public function testTopDebtorsReturnFullRankedListForRendererLimit(): void
     {
         $invoices = [];
 
@@ -155,16 +155,18 @@ class DebtorsTest extends TestCase
             $invoices[] = [
                 DataProviderInterface::FIELD_COMPANY => 'Company '.$i,
                 DataProviderInterface::FIELD_CURRENCY => 'CZK',
-                DataProviderInterface::FIELD_REMAINING_AMOUNT => 1000.0,
+                DataProviderInterface::FIELD_REMAINING_AMOUNT => (float) (1000 * $i),
                 DataProviderInterface::FIELD_DUE_DATE => '2023-11-01',
             ];
         }
 
         $result = (new Debtors())->process($this->makeProvider($invoices), self::makePeriod());
 
-        $this->assertCount(Debtors::TOP_DEBTORS_LIMIT, $result['data']['top_debtors']);
-        $this->assertSame(Debtors::TOP_DEBTORS_LIMIT, $result['data']['top_limit']);
+        // Module must not pre-truncate; DIGEST_ITEMS_LIMIT is applied by the renderer.
+        $this->assertCount(55, $result['data']['top_debtors']);
+        $this->assertSame(0, $result['data']['top_limit']);
         $this->assertSame(55, $result['data']['top_total']);
+        $this->assertSame('Company 55', array_values($result['data']['top_debtors'])[0]['company']);
     }
 
     private static function makePeriod(): \DatePeriod

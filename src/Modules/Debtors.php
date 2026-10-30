@@ -28,9 +28,6 @@ use VitexSoftware\DigestModules\Core\ZabbixOutputInterface;
  */
 class Debtors extends AbstractModule implements ZabbixOutputInterface
 {
-    /** Number of debtors listed in the top debtors table. */
-    public const TOP_DEBTORS_LIMIT = 20;
-
     protected string $moduleName = 'debtors';
     protected string $heading = 'Debtors';
     protected string $description = 'Analysis of unpaid invoices and overdue amounts by customer';
@@ -164,17 +161,20 @@ class Debtors extends AbstractModule implements ZabbixOutputInterface
             $formattedTotals[$currency] = $this->formatCurrency($amount, $currency);
         }
 
+        // Full ranked list — display truncation is done by the renderer via DIGEST_ITEMS_LIMIT.
+        $topTotal = \count($debtorsByCompany);
+
         return [
             'summary' => [
-                'total_debtors' => \count($debtorsByCompany),
+                'total_debtors' => $topTotal,
                 'total_invoices' => \count($unpaidInvoices),
                 'currencies' => array_keys($totalsByCurrency),
             ],
             'totals_by_currency' => $formattedTotals,
             'overdue_ranges' => $overdueRanges,
-            'top_debtors' => \array_slice($debtorsByCompany, 0, self::TOP_DEBTORS_LIMIT, true),
-            'top_limit' => self::TOP_DEBTORS_LIMIT,
-            'top_total' => \count($debtorsByCompany),
+            'top_debtors' => $debtorsByCompany,
+            'top_limit' => 0,
+            'top_total' => $topTotal,
             'all_debtors' => $debtorsByCompany,
         ];
     }

@@ -1,3 +1,10 @@
+php-vitexsoftware-digest-modules (1.2.1) unstable; urgency=medium
+
+  * Debtors: do not hard-cap top debtors at 20; pass the full ranked
+    list so DIGEST_ITEMS_LIMIT in the renderer can show e.g. 50 entries
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Fri, 30 Oct 2026 16:39:59 +0100
+
 php-vitexsoftware-digest-modules (1.2.0) unstable; urgency=medium
 
   * Customers without notification email/phone: only customers and
