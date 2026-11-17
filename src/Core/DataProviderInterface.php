@@ -162,6 +162,8 @@ interface DataProviderInterface
     public const FIELD_MAIL_STATUS = 'mail_status';
     public const FIELD_DESCRIPTION = 'description';
     public const FIELD_CONTACT_EMAIL = 'contact_email';
+    /** Optional invoice contact phone number. */
+    public const FIELD_CONTACT_PHONE = 'contact_phone';
     public const FIELD_DEDUCTION_STATUS = 'deduction_status';
     public const FIELD_FIRST_REMINDER_DATE = 'first_reminder_date';
     public const FIELD_SECOND_REMINDER_DATE = 'second_reminder_date';

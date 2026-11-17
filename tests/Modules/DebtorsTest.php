@@ -29,6 +29,31 @@ class DebtorsTest extends TestCase
         $this->assertSame(0, $result['data']['summary']['total_debtors']);
     }
 
+    public function testDebtorContactFallsBackToLaterInvoice(): void
+    {
+        $invoices = [
+            [
+                DataProviderInterface::FIELD_COMPANY => 'ACME Corp',
+                DataProviderInterface::FIELD_CURRENCY => 'CZK',
+                DataProviderInterface::FIELD_REMAINING_AMOUNT => 100.0,
+                DataProviderInterface::FIELD_DUE_DATE => '2023-11-01',
+            ],
+            [
+                DataProviderInterface::FIELD_COMPANY => 'ACME Corp',
+                DataProviderInterface::FIELD_CURRENCY => 'CZK',
+                DataProviderInterface::FIELD_REMAINING_AMOUNT => 200.0,
+                DataProviderInterface::FIELD_DUE_DATE => '2023-10-15',
+                DataProviderInterface::FIELD_CONTACT_EMAIL => 'a@acme.test',
+                DataProviderInterface::FIELD_CONTACT_PHONE => '+420123456789',
+            ],
+        ];
+
+        $result = (new Debtors())->process($this->makeProvider($invoices), self::makePeriod());
+
+        $this->assertSame('a@acme.test', $result['data']['all_debtors']['ACME Corp']['email']);
+        $this->assertSame('+420123456789', $result['data']['all_debtors']['ACME Corp']['phone']);
+    }
+
     public function testCountsDebtorsByCompany(): void
     {
         $invoices = [

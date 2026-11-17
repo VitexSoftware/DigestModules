@@ -113,7 +113,17 @@ class Debtors extends AbstractModule implements ZabbixOutputInterface
                     'invoices_count' => 0,
                     'total_amount' => [],
                     'overdue_days_max' => 0,
+                    'email' => '',
+                    'phone' => '',
                 ];
+            }
+
+            if ($debtorsByCompany[$company]['email'] === '') {
+                $debtorsByCompany[$company]['email'] = (string) ($invoice[DataProviderInterface::FIELD_CONTACT_EMAIL] ?? '');
+            }
+
+            if ($debtorsByCompany[$company]['phone'] === '') {
+                $debtorsByCompany[$company]['phone'] = (string) ($invoice[DataProviderInterface::FIELD_CONTACT_PHONE] ?? '');
             }
 
             ++$debtorsByCompany[$company]['invoices_count'];
