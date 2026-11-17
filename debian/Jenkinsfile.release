@@ -58,7 +58,11 @@ distributions.each { distro ->
                         sh 'dch -b -v ' + buildVer  + ' "' + env.BUILD_TAG  + '"'
                         sh 'sudo apt-get update --allow-releaseinfo-change'
                         sh 'sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pkg-php-tools || true'
-                        sh 'sudo chown -R jenkins:jenkins . ..'
+                        // `..` is shared by all parallel branches; its files belong to other users
+                        // and chown fails with "Operation not permitted" on the NFS workspaces,
+                        // so only the parent directory itself is chowned and failures are tolerated.
+                        sh 'sudo chown -R jenkins:jenkins . || true'
+                        sh 'sudo chown jenkins:jenkins .. || true'
                         sh 'sudo rm -rf debian/$(dpkg-parsechangelog --show-field Source)/ debian/.debhelper/ debian/tmp/'
                         sh 'debuild-pbuilder -r"sudo -E" -i -us -uc -b'
                         sh 'mkdir -p $WORKSPACE/dist/debian/ ; rm -rf $WORKSPACE/dist/debian/* ; for deb in $(cat debian/files | awk \'{print $1}\'); do mv "../$deb" $WORKSPACE/dist/debian/; done'
